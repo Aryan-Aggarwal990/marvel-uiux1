@@ -1,12 +1,14 @@
 import { useRef } from 'react'
 import { gsap, useGSAP, ScrollTrigger, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
+import { useHero } from '../theme/heroContext'
 import './Timeline.css'
 
 export default function Timeline() {
   const root = useRef<HTMLElement>(null)
   const phase = useRef<HTMLElement>(null)
   const { timeline } = eventConfig
+  const { active } = useHero()
 
   useGSAP(
     () => {
@@ -104,14 +106,14 @@ export default function Timeline() {
       <div className="tl-pin">
         <div className="container tl-head">
           <div>
-            <p className="eyebrow">Mission log // Day 01</p>
+            <p className="eyebrow">Mission log // Day 01{active ? ` // Agent ${active.name}` : ''}</p>
             <h2 className="tl-title display display-lg">
               <span className="mask">
                 <span className="mask-inner">The</span>
               </span>
               <span className="mask">
                 <span className="mask-inner">
-                  Mission<span className="red">.</span>
+                  Mission<span className="accent">.</span>
                 </span>
               </span>
             </h2>
@@ -133,7 +135,9 @@ export default function Timeline() {
               {timeline.map((t, i) => (
                 <li className="tl-node" key={t.time + t.title}>
                   <span className="tl-dot" aria-hidden="true" />
-                  <span className="tl-idx mono">Phase 0{i + 1}</span>
+                  <span className="tl-idx mono">
+                    Phase 0{i + 1} <span className="tl-code">// {t.code}</span>
+                  </span>
                   <time className="tl-time display">{t.time}</time>
                   <h3 className="tl-name display">{t.title}</h3>
                   <p className="tl-detail">{t.detail}</p>

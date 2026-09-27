@@ -1,0 +1,78 @@
+.ds {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  pointer-events: none;
+  visibility: hidden;
+  overflow: hidden;
+}
+.ds-wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at var(--ox) var(--oy), color-mix(in srgb, var(--ds-c2) 55%, transparent) 0%, transparent 38%),
+    radial-gradient(
+      circle at var(--ox) var(--oy),
+      var(--ds-c1) 0%,
+      color-mix(in srgb, var(--ds-c1) 45%, var(--ds-bg)) 28%,
+      var(--ds-bg) 70%
+    );
+}
+.ds-fx {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+.ds-flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  mix-blend-mode: overlay;
+}
+.ds-title {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  width: max-content;
+  max-width: 92vw;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 4px 40px rgba(0, 0, 0, 0.5);
+}
+.ds-mask {
+  display: block;
+  overflow: hidden;
+}
+.ds-mask > span {
+  display: block;
+}
+.ds-code {
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+.ds-name {
+  font-family: var(--f-display);
+  font-size: clamp(3rem, 12vw, 10rem);
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+.ds-tag {
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+.ds-bang {
+  font-family: var(--f-display);
+  font-size: 56px;
+  fill: #0a0a0a;
+}

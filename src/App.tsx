@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { initSmoothScroll, lockScroll, scrollToTarget, ScrollTrigger } from './lib/motion'
-import { eventConfig, type CharacterId } from './config/eventConfig'
+import { initSmoothScroll, lockScroll, ScrollTrigger } from './lib/motion'
+import { eventConfig } from './config/eventConfig'
+import { heroes } from './config/characters'
+import { useHero } from './theme/heroContext'
+import WorldBackdrop from './theme/WorldBackdrop'
 import Loader from './components/Loader'
 import Cursor from './components/Cursor'
 import ScrollProgress from './components/ScrollProgress'
@@ -15,12 +18,7 @@ import Location from './components/Location'
 import Registration from './components/Registration'
 import Footer from './components/Footer'
 
-const TICKER = [
-  'The multiverse is open',
-  `${eventConfig.universeCode} // ${eventConfig.university}`,
-  'GeeksForGeeks Student Chapter',
-  'Choose your hero',
-]
+const TICKER = ['The multiverse is open', ...heroes.map((h) => h.name), 'Choose your hero']
 const HUD_TICKER = [
   'System status // Online',
   'Signal strength // 100%',
@@ -33,7 +31,10 @@ const HUD_TICKER = [
 export default function App() {
   const [revealed, setRevealed] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [selectedHero, setSelectedHero] = useState<CharacterId | ''>('')
+  const { active } = useHero()
+  const hudTicker = active
+    ? [`Active hero // ${active.name}`, ...active.status, `Origin // ${active.code}`, ...HUD_TICKER.slice(3)]
+    : HUD_TICKER
 
   useEffect(() => {
     window.history.scrollRestoration = 'manual'
@@ -50,16 +51,12 @@ export default function App() {
     lockScroll(false)
   }, [])
 
-  const selectHero = useCallback((id: CharacterId) => {
-    setSelectedHero(id)
-    scrollToTarget('#register', { duration: 1.8 })
-  }, [])
-
   return (
     <>
       {loading && <Loader onReveal={onReveal} onDone={() => setLoading(false)} />}
       <Cursor />
       <ScrollProgress />
+      <WorldBackdrop />
       <div className="grain" aria-hidden="true" />
       <Navbar visible={revealed} />
 
@@ -68,11 +65,11 @@ export default function App() {
         <Marquee items={TICKER} tilt={-2} />
         <EventIntro />
         <Mission />
-        <Marquee items={HUD_TICKER} variant="dark" reverse />
-        <HeroSelector onSelect={selectHero} />
+        <Marquee items={hudTicker} variant="dark" reverse />
+        <HeroSelector />
         <Timeline />
         <Location />
-        <Registration selectedHero={selectedHero} />
+        <Registration />
       </main>
 
       <Footer />

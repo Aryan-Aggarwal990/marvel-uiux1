@@ -1,6 +1,9 @@
 import { useRef } from 'react'
 import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
+import { tracks } from '../config/characters'
+import { useHero } from '../theme/heroContext'
+import { HeroEmblem } from './art/emblems'
 import './Mission.css'
 
 const PARAGRAPHS = [
@@ -23,6 +26,7 @@ function Words({ text }: { text: string }) {
 }
 
 export default function Mission() {
+  const { active } = useHero()
   const root = useRef<HTMLElement>(null)
 
   useGSAP(
@@ -72,7 +76,7 @@ export default function Mission() {
               <span className="mask-inner">Your</span>
             </span>
             <span className="mask">
-              <span className="mask-inner red">Mission</span>
+              <span className="mask-inner accent">Mission</span>
             </span>
           </h2>
           <dl className="mission-readout mono">
@@ -87,12 +91,12 @@ export default function Mission() {
               </dd>
             </div>
             <div>
-              <dt>Clearance</dt>
-              <dd>All heroes</dd>
+              <dt>Assigned hero</dt>
+              <dd className={active ? 'accent' : ''}>{active ? active.name : 'Pending'}</dd>
             </div>
             <div>
-              <dt>Spectators</dt>
-              <dd className="red">Denied</dd>
+              <dt>{active ? 'Track' : 'Spectators'}</dt>
+              <dd className="accent">{active ? tracks[active.track].role : 'Denied'}</dd>
             </div>
           </dl>
         </aside>
@@ -107,9 +111,29 @@ export default function Mission() {
             ))}
           </div>
           <p className="mission-closer">
-            <span className="mono red">→ Directive</span>
+            <span className="mono accent">→ Directive</span>
             {CLOSER}
           </p>
+          <div className="mission-hero" key={active?.id ?? 'none'}>
+            {active ? (
+              <>
+                <HeroEmblem id={active.id} className="mission-hero-emblem" />
+                <div>
+                  <p className="mono mission-hero-label">
+                    {active.name}&apos;s directive // {active.code}
+                  </p>
+                  <p className="mission-hero-text">{active.directive}</p>
+                </div>
+              </>
+            ) : (
+              <p className="mono mission-hero-label">
+                No hero assigned //{' '}
+                <a href="#heroes" className="u-link accent">
+                  Choose your hero ↓
+                </a>
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </section>

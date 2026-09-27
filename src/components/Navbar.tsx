@@ -3,6 +3,8 @@ import { Menu, X } from 'lucide-react'
 import { scrollToTarget, lockScroll, ScrollTrigger } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import ScrambleText from './ui/ScrambleText'
+import { useHero } from '../theme/heroContext'
+import { HeroEmblem } from './art/emblems'
 import './Navbar.css'
 
 const LINKS = [
@@ -16,6 +18,7 @@ const LINKS = [
 export default function Navbar({ visible }: { visible: boolean }) {
   const [scrolled, setScrolled] = useState(() => window.scrollY > 40)
   const [open, setOpen] = useState(false)
+  const { active: hero } = useHero()
   const [active, setActive] = useState('')
 
   useEffect(() => {
@@ -81,10 +84,23 @@ export default function Navbar({ visible }: { visible: boolean }) {
           ))}
         </nav>
 
-        <div className="nav-status mono" title="All systems nominal">
-          <span className="pulse-dot green" />
-          System online
-        </div>
+        {hero ? (
+          <a
+            href="#heroes"
+            className="nav-status nav-hero mono"
+            onClick={(e) => go(e, '#heroes')}
+            key={hero.id}
+            aria-label={`Active hero: ${hero.name}. Change hero`}
+          >
+            <HeroEmblem id={hero.id} className="nav-hero-emblem" />
+            <span className="nav-hero-label">Active hero //</span> <b>{hero.name}</b>
+          </a>
+        ) : (
+          <div className="nav-status mono" title="All systems nominal">
+            <span className="pulse-dot green" />
+            System online
+          </div>
+        )}
 
         <button
           className="nav-toggle"
@@ -101,7 +117,7 @@ export default function Navbar({ visible }: { visible: boolean }) {
         <div className="nav-mobile-head mono">
           <span>{eventConfig.universeCode} // NAVIGATION</span>
           <span className="nav-mobile-status">
-            <span className="pulse-dot green" /> ONLINE
+            <span className="pulse-dot green" /> {hero ? `Hero // ${hero.name}` : 'ONLINE'}
           </span>
         </div>
         <ul>

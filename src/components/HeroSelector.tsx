@@ -1,25 +1,29 @@
-import { useRef, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
+import { useRef, useState, type MouseEvent } from 'react'
+import { ArrowDown, ArrowRight, Check, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion, scrollToTarget } from '../lib/motion'
-import { eventConfig, type CharacterId } from '../config/eventConfig'
-import { CharacterVisual } from './art/CharacterArt'
+import { heroes, tracks, type Hero } from '../config/characters'
+import { useHero } from '../theme/heroContext'
+import { HeroPortrait } from './art/CharacterArt'
+import { HeroEmblem } from './art/emblems'
 import './HeroSelector.css'
 
-export default function HeroSelector({ onSelect }: { onSelect: (id: CharacterId) => void }) {
-  const root = useRef<HTMLElement>(null)
-  const [active, setActive] = useState(0)
-  const { characters } = eventConfig
-  const current = characters[active]
+/** Where the dimension shift should radiate from: the pointer, or the element for keyboard clicks. */
+function originOf(e: MouseEvent<HTMLElement>) {
+  if (e.clientX || e.clientY) return { x: e.clientX, y: e.clientY }
+  const r = e.currentTarget.getBoundingClientRect()
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 }
+}
 
-  // On stacked (mobile) layouts, keep the freshly expanded card in view once it settles.
-  const activate = (i: number, card: HTMLElement) => {
-    if (i === active) return
-    setActive(i)
-    if (!window.matchMedia('(max-width: 900px)').matches) return
-    setTimeout(() => {
-      const top = card.getBoundingClientRect().top
-      if (top < 80 || top > window.innerHeight * 0.45) scrollToTarget(card, { offset: -90, duration: 0.9 })
-    }, 820)
+export default function HeroSelector() {
+  const root = useRef<HTMLElement>(null)
+  const { active, select } = useHero()
+  const activeIndex = heroes.findIndex((h) => h.id === active?.id)
+  const [focus, setFocus] = useState(Math.max(0, activeIndex))
+  // Follow the active hero when it changes elsewhere (nav, hero ring, registration)
+  const [lastActive, setLastActive] = useState(activeIndex)
+  if (lastActive !== activeIndex) {
+    setLastActive(activeIndex)
+    if (activeIndex >= 0) setFocus(activeIndex)
   }
 
   useGSAP(
@@ -32,119 +36,162 @@ export default function HeroSelector({ onSelect }: { onSelect: (id: CharacterId)
         stagger: 0.1,
         scrollTrigger: { trigger: '.hs-title', start: 'top 85%' },
       })
-      gsap.from('.hs-card', {
-        y: 80,
+      gsap.from('.hs-panel', {
+        y: 90,
         opacity: 0,
-        clipPath: 'inset(100% 0 0 0)',
-        duration: 1.2,
+        duration: 1.1,
         ease: 'expo.out',
-        stagger: 0.1,
-        scrollTrigger: { trigger: '.hs-deck', start: 'top 80%' },
-        clearProps: 'clipPath,transform,opacity',
+        stagger: 0.05,
+        scrollTrigger: { trigger: '.hs-lineup', start: 'top 85%' },
+        clearProps: 'transform,opacity',
       })
     },
     { scope: root },
   )
 
+  const choose = (hero: Hero, e: MouseEvent<HTMLElement>) => select(hero.id, originOf(e))
+
   return (
-    <section className="hs section" id="heroes" ref={root} style={{ '--glow': current.glow }}>
-      {/* Background changes with the active hero */}
-      <div className="hs-bgs" aria-hidden="true">
-        {characters.map((c, i) => (
-          <div key={c.id} className={`hs-bg ${i === active ? 'is-on' : ''}`} style={{ '--c': c.glow }} />
-        ))}
+    <section className="hs section" id="heroes" ref={root}>
+      {/* The active hero dominates the section backdrop */}
+      <div className="hs-stage" aria-hidden="true">
+        {active && (
+          <div className="hs-stage-art" key={active.id}>
+            <HeroPortrait hero={active} />
+          </div>
+        )}
+        <div className="hs-giant display" key={`n-${active?.id ?? 'none'}`}>
+          {active ? active.name : 'Multiverse'}
+        </div>
       </div>
 
       <div className="container">
         <header className="hs-head">
           <div>
-            <p className="eyebrow">Hero selection // {characters.length} tracks</p>
+            <p className="eyebrow">Hero selection // {heroes.length} variants detected</p>
             <h2 className="hs-title display display-lg">
               <span className="mask">
                 <span className="mask-inner">Choose your</span>
               </span>
               <span className="mask">
-                <span className="mask-inner red">Hero</span>
+                <span className="mask-inner accent">Hero</span>
               </span>
             </h2>
           </div>
-          <div className="hs-readout mono" aria-live="polite">
-            <span>Selected //</span>
-            <b>
-              {current.number} — {current.name}
-            </b>
-            <span className="hs-hint">
-              <span className="hs-hint-desk">Hover</span>
-              <span className="hs-hint-touch">Tap</span> a card to inspect
-            </span>
-          </div>
-        </header>
 
-        <div className="hs-deck">
-          {characters.map((c, i) => {
-            const on = i === active
-            return (
-              <article
-                key={c.id}
-                className={`hs-card ${on ? 'is-active' : ''}`}
-                style={{ '--c': c.glow }}
-                onPointerEnter={(e) => e.pointerType === 'mouse' && setActive(i)}
-                onClick={(e) => activate(i, e.currentTarget)}
-                onFocus={(e) => e.target.matches(':focus-visible') && setActive(i)}
-                tabIndex={0}
-                aria-expanded={on}
-                aria-label={`${c.name}, ${c.role}`}
-                data-cursor={on ? '' : 'View'}
-              >
-                <div className="hs-art">
-                  <CharacterVisual id={c.id} image={c.image} alt={`${c.name} artwork`} className="hs-art-img" />
-                </div>
-                <div className="hs-shade" aria-hidden="true" />
-                <div className="corners" aria-hidden="true">
-                  <i />
-                </div>
-
-                <div className="hs-top">
-                  <span className="hs-num display">{c.number}</span>
-                  <span className="hs-labels mono">
-                    <span>Clearance // {c.clearance}</span>
-                    <span>
-                      Status // <b className="red">Available</b>
-                    </span>
-                  </span>
-                </div>
-
-                <h3 className="hs-vname display" aria-hidden={on}>
-                  {c.name}
-                </h3>
-
-                <div className="hs-info">
-                  <p className="hs-role mono">{c.role}</p>
-                  <h3 className="hs-name display">{c.name}</h3>
-                  <ul className="hs-traits display">
-                    {c.traits.map((t, k) => (
-                      <li key={t} style={{ '--k': k }}>
-                        {t}
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="hs-desc">{c.description}</p>
-                  <p className="hs-tags mono">{c.tags}</p>
-                  <button
-                    className="btn hs-cta"
-                    tabIndex={on ? 0 : -1}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      onSelect(c.id)
-                    }}
-                  >
-                    Mission profile <ArrowRight size={16} />
+          <div className="hs-readout">
+            <p className="mono hs-readout-label">
+              <span className={`pulse-dot ${active ? '' : 'green'}`} /> Active hero //
+            </p>
+            <p className="hs-readout-name display" key={active?.id ?? 'none'}>
+              {active ? active.name : 'None selected'}
+            </p>
+            {active ? (
+              <>
+                <ul className="hs-status mono">
+                  {active.status.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ul>
+                <div className="hs-readout-actions">
+                  <button className="btn btn-solid hs-go" onClick={() => scrollToTarget('#register', { duration: 1.6 })}>
+                    Register as {active.name} <ArrowRight size={16} />
+                  </button>
+                  <button className="u-link mono hs-reset" onClick={(e) => select(null, originOf(e))}>
+                    <RotateCcw size={12} /> Reset multiverse
                   </button>
                 </div>
-              </article>
+              </>
+            ) : (
+              <p className="mono hs-hint">
+                <span className="hs-hint-desk">Hover to preview · click to enter their world</span>
+                <span className="hs-hint-touch">Swipe · tap a hero to enter their world</span>
+              </p>
+            )}
+          </div>
+        </header>
+      </div>
+
+      <div className="hs-lineup-wrap">
+        <ul className="hs-lineup" onPointerLeave={() => activeIndex >= 0 && setFocus(activeIndex)}>
+          {heroes.map((h, i) => {
+            const isActive = h.id === active?.id
+            const track = tracks[h.track]
+            return (
+              <li
+                key={h.id}
+                className={`hs-panel ${i === focus ? 'is-focus' : ''} ${isActive ? 'is-active' : ''}`}
+                style={{ '--c1': h.theme.accent, '--c2': h.theme.accent2, '--cbg': h.theme.bg }}
+                onPointerEnter={(e) => e.pointerType === 'mouse' && setFocus(i)}
+                onClick={(e) => choose(h, e)}
+                data-cursor={isActive ? 'Active' : 'Select'}
+              >
+                <div className="hs-panel-bg" aria-hidden="true" />
+                <div className="hs-panel-art" aria-hidden="true">
+                  <HeroPortrait hero={h} />
+                </div>
+                <div className="hs-panel-shade" aria-hidden="true" />
+
+                <div className="hs-top">
+                  <span className="hs-num display">{String(i + 1).padStart(2, '0')}</span>
+                  <HeroEmblem id={h.id} className="hs-emblem" />
+                </div>
+                <span className="hs-vname display" aria-hidden="true">
+                  {h.name}
+                </span>
+                {isActive && (
+                  <span className="hs-badge mono">
+                    <Check size={11} /> Active
+                  </span>
+                )}
+
+                <div className="hs-info">
+                  <p className="hs-code mono">
+                    {h.code} <span>// {track.role}</span>
+                  </p>
+                  <h3 className="hs-name display">{h.name}</h3>
+                  <p className="hs-line">“{h.tagline}”</p>
+                  <p className="hs-tags mono">{track.tags}</p>
+                  <button
+                    className="btn hs-select"
+                    onFocus={() => setFocus(i)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      choose(h, e)
+                    }}
+                    aria-pressed={isActive}
+                    aria-label={isActive ? `${h.name} is your active hero` : `Select ${h.name}`}
+                  >
+                    {isActive ? (
+                      <>
+                        Active hero <Check size={16} />
+                      </>
+                    ) : (
+                      <>
+                        Enter their world <ArrowRight size={16} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </li>
             )
           })}
-        </div>
+        </ul>
+      </div>
+
+      <div className="container hs-foot mono">
+        <span>
+          {active ? (
+            <>
+              Track // <b>{tracks[active.track].role}</b> — {tracks[active.track].description}
+            </>
+          ) : (
+            'Each hero represents one of the four challenge tracks.'
+          )}
+        </span>
+        <button className="u-link hs-continue" onClick={() => scrollToTarget('#timeline', { duration: 1.4 })}>
+          Continue mission <ArrowDown size={13} />
+        </button>
       </div>
     </section>
   )

@@ -84,7 +84,7 @@ export default function EventIntro() {
           </span>
           <span className="mask">
             <span className="mask-inner">
-              Possibilities<span className="red">.</span>
+              Possibilities<span className="accent">.</span>
             </span>
           </span>
         </h2>
@@ -94,7 +94,7 @@ export default function EventIntro() {
           {details.map((d, i) => (
             <div className="intro-cell" key={d.label}>
               <span className="mono intro-label">
-                <span className="red">0{i + 1}</span> {d.label}
+                <span className="accent">0{i + 1}</span> {d.label}
               </span>
               <strong className="intro-value">{d.value}</strong>
               <span className="mono intro-sub">{d.sub}</span>
@@ -113,7 +113,7 @@ export default function EventIntro() {
                     <span data-count={s.value} data-pad={s.pad}>
                       {String(s.value).padStart(s.pad, '0')}
                     </span>
-                    {s.suffix && <span className="red">{s.suffix}</span>}
+                    {s.suffix && <span className="accent">{s.suffix}</span>}
                   </>
                 )}
               </span>

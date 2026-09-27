@@ -1,7 +1,11 @@
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { ArrowRight, ArrowUpRight, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
-import { eventConfig, type CharacterId } from '../config/eventConfig'
+import { eventConfig } from '../config/eventConfig'
+import { heroes, tracks, type HeroId } from '../config/characters'
+import { useHero } from '../theme/heroContext'
+import { HeroPortrait } from './art/CharacterArt'
+import { HeroEmblem } from './art/emblems'
 import Magnetic from './ui/Magnetic'
 import './Registration.css'
 
@@ -10,13 +14,12 @@ interface FormValues {
   email: string
   phone: string
   branch: string
-  hero: CharacterId | ''
 }
-type FieldKey = Exclude<keyof FormValues, 'hero'>
+type FieldKey = keyof FormValues
 type FormErrors = Partial<Record<FieldKey, string>>
 type Status = 'idle' | 'processing' | 'done'
 
-const EMPTY: FormValues = { name: '', email: '', phone: '', branch: '', hero: '' }
+const EMPTY: FormValues = { name: '', email: '', phone: '', branch: '' }
 const LOG = ['Verifying identity', `Syncing with ${eventConfig.universeCode}`, 'Allocating hero slot', 'Encrypting transmission']
 const BLOCKS = 20
 
@@ -30,7 +33,12 @@ function validate(v: FormValues): FormErrors {
 }
 
 /** POSTs to eventConfig.registration.endpoint when set; otherwise the submission is simulated. */
-async function submitToEndpoint(values: FormValues): Promise<void> {
+interface Submission extends FormValues {
+  hero: HeroId | null
+  track: string | null
+}
+
+async function submitToEndpoint(values: Submission): Promise<void> {
   const { endpoint } = eventConfig.registration
   if (!endpoint) return
   const res = await fetch(endpoint, {
@@ -41,7 +49,8 @@ async function submitToEndpoint(values: FormValues): Promise<void> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 
-export default function Registration({ selectedHero }: { selectedHero: CharacterId | '' }) {
+export default function Registration() {
+  const { active, select } = useHero()
   const root = useRef<HTMLElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [values, setValues] = useState<FormValues>(EMPTY)
@@ -49,14 +58,7 @@ export default function Registration({ selectedHero }: { selectedHero: Character
   const [status, setStatus] = useState<Status>('idle')
   const [failure, setFailure] = useState('')
   const [heroId, setHeroId] = useState('')
-  const { characters, registration } = eventConfig
-
-  // Prefill the hero chosen in the Hero Selector (adjusting state during render, no effect needed)
-  const [lastSelected, setLastSelected] = useState(selectedHero)
-  if (selectedHero !== lastSelected) {
-    setLastSelected(selectedHero)
-    if (selectedHero) setValues((v) => ({ ...v, hero: selectedHero }))
-  }
+  const { registration } = eventConfig
 
   useGSAP(
     () => {
@@ -95,7 +97,7 @@ export default function Registration({ selectedHero }: { selectedHero: Character
 
   const set = (key: keyof FormValues) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setValues((v) => ({ ...v, [key]: e.target.value }))
-    if (key !== 'hero' && errors[key]) setErrors((er) => ({ ...er, [key]: undefined }))
+    if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }))
   }
 
   const runSequence = () =>
@@ -140,8 +142,11 @@ export default function Registration({ selectedHero }: { selectedHero: Character
     // Wait for the processing view to mount, then run animation + request together.
     await new Promise((r) => requestAnimationFrame(r))
     try {
-      await Promise.all([runSequence(), submitToEndpoint(values)])
-      setHeroId(`GFG-616-${Math.floor(1000 + Math.random() * 9000)}`)
+      await Promise.all([
+        runSequence(),
+        submitToEndpoint({ ...values, hero: active?.id ?? null, track: active ? tracks[active.track].role : null }),
+      ])
+      setHeroId(`${active ? active.id.slice(0, 4).toUpperCase() : 'GFG'}-616-${Math.floor(1000 + Math.random() * 9000)}`)
       setStatus('done')
     } catch (err) {
       setFailure(`Transmission failed (${err instanceof Error ? err.message : 'unknown error'}). Please try again.`)
@@ -150,11 +155,9 @@ export default function Registration({ selectedHero }: { selectedHero: Character
   }
 
   const reset = () => {
-    setValues({ ...EMPTY, hero: values.hero })
+    setValues(EMPTY)
     setStatus('idle')
   }
-
-  const heroName = characters.find((c) => c.id === values.hero)?.name
 
   return (
     <section className="reg section" id="register" ref={root}>
@@ -167,7 +170,7 @@ export default function Registration({ selectedHero }: { selectedHero: Character
           </span>
           <span className="mask">
             <span className="mask-inner">
-              <span className="outline-text">The</span> multiverse<span className="red">?</span>
+              <span className="outline-text">The</span> multiverse<span className="accent">?</span>
             </span>
           </span>
         </h2>
@@ -180,13 +183,13 @@ export default function Registration({ selectedHero }: { selectedHero: Character
             </p>
             <ol className="reg-steps">
               <li>
-                <span className="mono red">01</span> Transmit your details
+                <span className="mono accent">01</span> Transmit your details
               </li>
               <li>
-                <span className="mono red">02</span> Choose your hero track
+                <span className="mono accent">02</span> Choose your hero track
               </li>
               <li>
-                <span className="mono red">03</span> Report to {eventConfig.venue}
+                <span className="mono accent">03</span> Report to {eventConfig.venue}
               </li>
             </ol>
             <div className="reg-tags">
@@ -257,19 +260,38 @@ export default function Registration({ selectedHero }: { selectedHero: Character
                   </select>
                 </Field>
 
-                <fieldset className="reg-heroes">
-                  <legend className="mono">
-                    <span className="red">05</span> Hero track <span className="muted">(optional)</span>
-                  </legend>
-                  <div className="reg-chips">
-                    {characters.map((c) => (
-                      <label key={c.id} className={`reg-chip ${values.hero === c.id ? 'is-on' : ''}`}>
-                        <input type="radio" name="hero" value={c.id} checked={values.hero === c.id} onChange={set('hero')} />
-                        <span className="mono">{c.number}</span> {c.name}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
+                <div className="reg-hero">
+                  <label className="reg-field reg-hero-field">
+                    <span className="reg-label mono">
+                      <span className="accent">05</span> Your hero <span className="muted">(changes your world)</span>
+                    </span>
+                    <select
+                      name="hero"
+                      value={active?.id ?? ''}
+                      className={active ? '' : 'is-empty'}
+                      onChange={(e) => {
+                        const r = e.currentTarget.getBoundingClientRect()
+                        select((e.target.value || null) as HeroId | null, { x: r.left + r.width / 2, y: r.top + r.height / 2 })
+                      }}
+                    >
+                      <option value="">No hero — stay in the multiverse</option>
+                      {heroes.map((h) => (
+                        <option key={h.id} value={h.id}>
+                          {h.name} — {tracks[h.track].role}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="reg-line" aria-hidden="true" />
+                  </label>
+                  {active && (
+                    <p className="reg-hero-card mono" key={active.id}>
+                      <HeroEmblem id={active.id} className="reg-hero-emblem" />
+                      <span>
+                        {tracks[active.track].role} <span className="muted">// {tracks[active.track].tags}</span>
+                      </span>
+                    </p>
+                  )}
+                </div>
 
                 {failure && <p className="reg-failure mono">{failure}</p>}
 
@@ -291,7 +313,7 @@ export default function Registration({ selectedHero }: { selectedHero: Character
                 <ul className="reg-log mono">
                   {LOG.map((l) => (
                     <li key={l}>
-                      <span className="red">&gt;</span> {l}... <span className="reg-ok">OK</span>
+                      <span className="accent">&gt;</span> {l}... <span className="reg-ok">OK</span>
                     </li>
                   ))}
                 </ul>
@@ -301,6 +323,11 @@ export default function Registration({ selectedHero }: { selectedHero: Character
             {status === 'done' && (
               <div className="reg-done" aria-live="assertive">
                 <div className="reg-flash" aria-hidden="true" />
+                {active && (
+                  <div className="reg-done-art" aria-hidden="true">
+                    <HeroPortrait hero={active} />
+                  </div>
+                )}
                 <p className="mono reg-done-fade reg-done-kicker">
                   <span className="pulse-dot green" /> Access // Granted
                 </p>
@@ -309,10 +336,12 @@ export default function Registration({ selectedHero }: { selectedHero: Character
                     <span className="mask-inner">Welcome,</span>
                   </span>
                   <span className="mask">
-                    <span className="mask-inner red">Hero.</span>
+                    <span className="mask-inner accent">Hero.</span>
                   </span>
                 </h3>
-                <p className="mono reg-done-fade reg-done-sub">Registration confirmed.</p>
+                <p className="mono reg-done-fade reg-done-sub">
+                  Registration confirmed.{active && <span className="accent"> {active.welcome}</span>}
+                </p>
 
                 <div className="reg-card reg-done-fade">
                   <div>
@@ -324,12 +353,12 @@ export default function Registration({ selectedHero }: { selectedHero: Character
                     <b>{values.name}</b>
                   </div>
                   <div>
-                    <span className="mono muted">Track</span>
-                    <b>{heroName || 'Unassigned'}</b>
+                    <span className="mono muted">Hero</span>
+                    <b>{active ? active.name : 'Unassigned'}</b>
                   </div>
                   <div>
-                    <span className="mono muted">Universe</span>
-                    <b>{eventConfig.universeCode}</b>
+                    <span className="mono muted">Track</span>
+                    <b>{active ? tracks[active.track].role : 'Any'}</b>
                   </div>
                 </div>
 
@@ -359,7 +388,7 @@ function Field({ label, index, error, children }: FieldProps) {
   return (
     <label className={`reg-field ${error ? 'has-error' : ''}`}>
       <span className="reg-label mono">
-        <span className="red">{index}</span> {label}
+        <span className="accent">{index}</span> {label}
       </span>
       {children}
       <span className="reg-line" aria-hidden="true" />

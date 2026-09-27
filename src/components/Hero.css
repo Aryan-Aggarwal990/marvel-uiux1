@@ -30,31 +30,13 @@
   mask-image: radial-gradient(ellipse 80% 70% at 65% 40%, #000 20%, transparent 75%);
   -webkit-mask-image: radial-gradient(ellipse 80% 70% at 65% 40%, #000 20%, transparent 75%);
 }
-.hero-web {
-  position: absolute;
-  top: 50%;
-  left: 68%;
-  width: 150vmax;
-  height: 150vmax;
-  max-width: none;
-  translate: -50% -50%;
-  color: rgba(230, 36, 41, 0.12);
-  mask-image: radial-gradient(circle, #000 10%, transparent 55%);
-  -webkit-mask-image: radial-gradient(circle, #000 10%, transparent 55%);
-}
-.hero-particles {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
 
 /* Light streaks */
 .hero-streak {
   position: absolute;
   height: 1px;
   width: 45vw;
-  background: linear-gradient(90deg, transparent, rgba(255, 90, 94, 0.8), transparent);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent-2) 80%, transparent), transparent);
   transform: rotate(-24deg);
   opacity: 0;
   animation: streak 7s var(--ease) infinite;
@@ -120,14 +102,19 @@
   width: 100%;
   height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 40px 80px rgba(230, 36, 41, 0.35)) contrast(1.05) brightness(0.88);
+  filter: drop-shadow(0 40px 80px color-mix(in srgb, var(--accent) 35%, transparent)) contrast(1.05) brightness(0.88);
 }
 .hero-glow {
   position: absolute;
   width: 80%;
   aspect-ratio: 1;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 36, 41, 0.55), rgba(230, 36, 41, 0.08) 45%, transparent 68%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 55%, transparent),
+    color-mix(in srgb, var(--accent) 8%, transparent) 45%,
+    transparent 68%
+  );
   filter: blur(20px);
   animation: breathe 6s ease-in-out infinite;
 }
@@ -161,8 +148,8 @@
   font-size: 0.58rem;
   color: rgba(245, 245, 245, 0.55);
   padding: 0.35rem 0.6rem;
-  border: 1px solid rgba(230, 36, 41, 0.4);
-  background: rgba(5, 5, 5, 0.5);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--bg) 50%, transparent);
 }
 
 .hero-vignette {
@@ -171,8 +158,9 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 120% 90% at 60% 40%, transparent 40%, rgba(5, 5, 5, 0.9) 100%),
-    linear-gradient(to top, var(--bg) 0%, transparent 28%), linear-gradient(to right, rgba(5, 5, 5, 0.75) 0%, transparent 55%);
+    radial-gradient(ellipse 120% 90% at 60% 40%, transparent 40%, color-mix(in srgb, var(--bg) 90%, transparent) 100%),
+    linear-gradient(to top, var(--bg) 0%, transparent 28%),
+    linear-gradient(to right, color-mix(in srgb, var(--bg) 75%, transparent) 0%, transparent 55%);
 }
 
 /* ── Content ── */
@@ -203,7 +191,7 @@
   letter-spacing: 0.18em;
   text-transform: uppercase;
   padding-left: 1rem;
-  border-left: 2px solid var(--red);
+  border-left: 2px solid var(--accent);
 }
 
 .hero-cta {
@@ -259,7 +247,7 @@
 }
 .hud-bounce {
   animation: bounce 1.8s ease-in-out infinite;
-  color: var(--red);
+  color: var(--accent);
 }
 @keyframes bounce {
   50% {
@@ -300,12 +288,8 @@
   }
   .hero-vignette {
     background:
-      radial-gradient(ellipse 120% 70% at 50% 30%, transparent 35%, rgba(5, 5, 5, 0.9) 100%),
-      linear-gradient(to top, var(--bg) 8%, rgba(5, 5, 5, 0.7) 42%, transparent 70%);
-  }
-  .hero-web {
-    left: 50%;
-    top: 36%;
+      radial-gradient(ellipse 120% 70% at 50% 30%, transparent 35%, color-mix(in srgb, var(--bg) 90%, transparent) 100%),
+      linear-gradient(to top, var(--bg) 8%, color-mix(in srgb, var(--bg) 70%, transparent) 42%, transparent 70%);
   }
   .hero-title {
     font-size: clamp(3.3rem, 17.5vw, 6.5rem);
@@ -344,5 +328,115 @@
 @media (max-height: 700px) and (min-width: 769px) {
   .hero-title {
     font-size: clamp(3.5rem, 17vh, 10rem);
+  }
+}
+
+/* ── Hero art swaps with the active hero ── */
+.hero-char-wrap.is-hero {
+  animation: hero-art-in 1.2s var(--ease) both;
+}
+.hero-char-wrap.is-core {
+  mask-image: none;
+  -webkit-mask-image: none;
+  animation: hero-art-in 1.2s var(--ease) both;
+}
+@keyframes hero-art-in {
+  from {
+    opacity: 0;
+    scale: 1.12;
+    filter: blur(16px);
+  }
+}
+.core-pulse {
+  animation: breathe 5s ease-in-out infinite;
+  transform-origin: 200px 250px;
+}
+.core-count {
+  font-family: var(--f-display);
+  font-size: 44px;
+  fill: #f5f5f5;
+}
+.core-label {
+  font-family: var(--f-mono);
+  font-size: 9px;
+  letter-spacing: 0.3em;
+  fill: #8a8a8a;
+}
+.hero-quote {
+  display: block;
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: none;
+  animation: hero-art-in 0.9s var(--ease) both;
+}
+
+/* ── Orbit of hero emblems (click = jump into that world) ── */
+.hero-orbit {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  animation: spin 90s linear infinite;
+}
+.hero-orbit:hover,
+.hero-orbit:focus-within,
+.hero-orbit:hover .orbit-inner,
+.hero-orbit:focus-within .orbit-inner {
+  animation-play-state: paused;
+}
+.orbit-item {
+  --size: 42px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--size);
+  height: var(--size);
+  margin: calc(var(--size) / -2) 0 0 calc(var(--size) / -2);
+  transform: rotate(calc(var(--i) * 30deg)) translateY(-46cqw);
+  pointer-events: auto;
+}
+.orbit-inner {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--c1) 45%, transparent);
+  background: color-mix(in srgb, var(--bg) 75%, transparent);
+  color: var(--c1);
+  rotate: calc(var(--i) * -30deg);
+  animation: spin 90s linear infinite reverse;
+  transition:
+    scale 0.4s var(--ease),
+    background-color 0.4s,
+    box-shadow 0.4s;
+  backdrop-filter: blur(4px);
+}
+.orbit-emblem {
+  width: 55%;
+  height: 55%;
+}
+.orbit-item:hover .orbit-inner,
+.orbit-item:focus-visible .orbit-inner {
+  scale: 1.25;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--c1) 60%, transparent);
+}
+.orbit-item.is-active .orbit-inner {
+  background: var(--c1);
+  color: #050505;
+  box-shadow: 0 0 30px var(--c1);
+}
+.hero-reticle-move {
+  pointer-events: none;
+  container-type: inline-size;
+}
+.hero-char-scroll {
+  pointer-events: none;
+}
+
+/* Phones: the swipeable lineup handles selection; keep the hero uncluttered */
+@media (max-width: 768px) {
+  .hero-orbit {
+    display: none;
   }
 }

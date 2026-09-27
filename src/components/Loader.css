@@ -42,9 +42,9 @@
   color: var(--white);
 }
 .ld-bar {
-  color: var(--red);
+  color: var(--accent);
   letter-spacing: -0.02em;
-  text-shadow: 0 0 12px var(--red-glow);
+  text-shadow: 0 0 12px var(--accent-glow);
 }
 .ld-pct {
   margin-left: auto;

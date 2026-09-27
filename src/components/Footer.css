@@ -13,7 +13,7 @@
   width: 120vw;
   height: 80%;
   translate: -50% 0;
-  background: radial-gradient(ellipse at center, rgba(230, 36, 41, 0.35), transparent 62%);
+  background: radial-gradient(ellipse at center, color-mix(in srgb, var(--accent) 35%, transparent), transparent 62%);
   animation: footer-breathe 5s ease-in-out infinite;
 }
 @keyframes footer-breathe {
@@ -64,7 +64,7 @@
     transform 0.4s var(--ease);
 }
 .footer-social-link:hover svg {
-  color: var(--red);
+  color: var(--accent);
   transform: translateY(-2px);
 }
 
@@ -74,27 +74,27 @@
   line-height: 0.9;
 }
 .footer-final-red {
-  color: var(--red);
-  text-shadow: 0 0 60px rgba(230, 36, 41, 0.5);
+  color: var(--accent);
+  text-shadow: 0 0 60px color-mix(in srgb, var(--accent) 50%, transparent);
   animation: glitch 6s steps(1) infinite;
 }
 @keyframes glitch {
   0%,
   92%,
   100% {
-    text-shadow: 0 0 60px rgba(230, 36, 41, 0.5);
+    text-shadow: 0 0 60px color-mix(in srgb, var(--accent) 50%, transparent);
     translate: 0 0;
   }
   93% {
     text-shadow:
       -3px 0 rgba(0, 200, 255, 0.6),
-      3px 0 rgba(230, 36, 41, 0.9);
+      3px 0 color-mix(in srgb, var(--accent) 90%, transparent);
     translate: 2px 0;
   }
   95% {
     text-shadow:
       3px 0 rgba(0, 200, 255, 0.6),
-      -3px 0 rgba(230, 36, 41, 0.9);
+      -3px 0 color-mix(in srgb, var(--accent) 90%, transparent);
     translate: -2px 0;
   }
 }
@@ -129,4 +129,45 @@
     flex-direction: column;
     align-items: flex-start;
   }
+}
+
+.footer-signoff {
+  margin: -1.5rem 0 2.5rem;
+  color: var(--accent);
+  font-size: 0.72rem;
+}
+.footer-roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 2rem;
+}
+.footer-roster-item {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: min(var(--hud-radius), 999px);
+  color: color-mix(in srgb, var(--c1) 70%, #777);
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    translate 0.4s var(--ease),
+    background-color 0.3s;
+}
+.footer-roster-item svg {
+  width: 100%;
+  height: 100%;
+}
+.footer-roster-item:hover {
+  color: var(--c1);
+  border-color: var(--c1);
+  translate: 0 -3px;
+}
+.footer-roster-item.is-active {
+  background: var(--c1);
+  border-color: var(--c1);
+  color: #050505;
 }

@@ -1,5 +1,5 @@
 .mission {
-  background: radial-gradient(ellipse 50% 40% at 90% 30%, rgba(230, 36, 41, 0.08), transparent 70%), var(--bg);
+  background: radial-gradient(ellipse 50% 40% at 90% 30%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
 }
 .mission-grid {
   display: grid;
@@ -46,7 +46,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: linear-gradient(to bottom, var(--red), rgba(230, 36, 41, 0.1));
+  background: linear-gradient(to bottom, var(--accent), color-mix(in srgb, var(--accent) 10%, transparent));
 }
 .mission-copy {
   display: flex;
@@ -64,7 +64,7 @@
   font-weight: 400;
   letter-spacing: 0;
   text-transform: uppercase;
-  color: var(--red);
+  color: var(--accent);
 }
 .mission-closer {
   display: flex;
@@ -88,5 +88,40 @@
   .mission-readout {
     grid-template-columns: 1fr 1fr;
     column-gap: 1.5rem;
+  }
+}
+
+.mission-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+  max-width: 40rem;
+  margin-top: 2.5rem;
+  padding: 1.25rem 1.4rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--line));
+  border-radius: min(var(--hud-radius), 18px);
+  background: linear-gradient(90deg, var(--accent-soft), transparent);
+  animation: mission-hero-in 0.9s var(--ease) both;
+}
+.mission-hero-emblem {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  color: var(--accent);
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+.mission-hero-label {
+  font-size: 0.62rem;
+  color: var(--grey);
+}
+.mission-hero-text {
+  margin-top: 0.45rem;
+  font-size: clamp(1.05rem, 1.5vw, 1.3rem);
+  line-height: 1.45;
+}
+@keyframes mission-hero-in {
+  from {
+    opacity: 0;
+    translate: 0 16px;
   }
 }
