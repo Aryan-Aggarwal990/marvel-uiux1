@@ -1,0 +1,435 @@
+/* ── Design tokens ─────────────────────────────────────────── */
+:root {
+  --bg: #050505;
+  --bg-2: #0b0b0b;
+  --panel: #111111;
+  --line: rgba(245, 245, 245, 0.1);
+  --line-strong: rgba(245, 245, 245, 0.22);
+  --red: #e62429;
+  --red-deep: #8d0f13;
+  --red-glow: rgba(230, 36, 41, 0.45);
+  --white: #f5f5f5;
+  --grey: #8a8a8a;
+  --grey-dark: #111111;
+
+  --f-display: 'Anton', 'Bebas Neue', Impact, sans-serif;
+  --f-body: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --gutter: clamp(1rem, 4vw, 3.5rem);
+  --max: 1440px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --nav-h: 72px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: auto;
+}
+html.is-locked,
+html.is-locked body {
+  overflow: hidden;
+}
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--red);
+  color: var(--white);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 4px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html.has-cursor,
+  html.has-cursor * {
+    cursor: none !important;
+  }
+}
+
+/* ── Layout helpers ────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.section {
+  position: relative;
+  padding: clamp(5rem, 12vw, 10rem) 0;
+}
+
+/* ── Typography ────────────────────────────────────────────── */
+.display {
+  font-family: var(--f-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+}
+.display-xl {
+  font-size: clamp(3.6rem, 13.5vw, 13rem);
+}
+.display-lg {
+  font-size: clamp(3rem, 10vw, 9.5rem);
+}
+.display-md {
+  font-size: clamp(2.2rem, 6vw, 5.5rem);
+}
+
+.mono {
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--grey);
+}
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--red);
+}
+
+.red {
+  color: var(--red);
+}
+.muted {
+  color: var(--grey);
+}
+.outline-text {
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(245, 245, 245, 0.85);
+}
+
+/* Masked line reveal: wrap text in .mask > .mask-inner */
+.mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.04em;
+  margin-bottom: -0.04em;
+}
+.mask-inner {
+  display: block;
+  will-change: transform;
+}
+
+/* ── HUD bits ──────────────────────────────────────────────── */
+.hud-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--line-strong);
+  font-family: var(--f-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--grey);
+  white-space: nowrap;
+}
+.hud-tag b {
+  color: var(--white);
+  font-weight: 500;
+}
+
+.pulse-dot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  flex-shrink: 0;
+}
+.pulse-dot::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--red);
+  animation: pulse 1.8s var(--ease) infinite;
+}
+.pulse-dot.green {
+  background: #3cff8f;
+}
+.pulse-dot.green::after {
+  border-color: #3cff8f;
+}
+@keyframes pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.corners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.corners::before,
+.corners::after,
+.corners > i::before,
+.corners > i::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--line-strong);
+  border-style: solid;
+}
+.corners::before {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+}
+.corners::after {
+  top: 0;
+  right: 0;
+  border-width: 1px 1px 0 0;
+}
+.corners > i::before {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 1px 1px;
+}
+.corners > i::after {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+}
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.magnetic {
+  display: inline-block;
+  will-change: transform;
+}
+
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  height: 60px;
+  padding: 0 1.9rem;
+  font-family: var(--f-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--white);
+  border: 1px solid var(--line-strong);
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    border-color 0.4s var(--ease),
+    color 0.4s var(--ease);
+  white-space: nowrap;
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--red);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.5s var(--ease);
+  z-index: -1;
+}
+.btn:hover::before,
+.btn:focus-visible::before {
+  transform: scaleY(1);
+}
+.btn:hover {
+  border-color: var(--red);
+}
+.btn svg {
+  transition: transform 0.4s var(--ease);
+}
+.btn:hover svg {
+  transform: translateX(4px);
+}
+.btn-bracket::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px dashed rgba(245, 245, 245, 0.14);
+  pointer-events: none;
+}
+.btn-solid {
+  background: var(--red);
+  border-color: var(--red);
+}
+.btn-solid::before {
+  background: var(--white);
+}
+.btn-solid:hover {
+  color: var(--bg);
+}
+
+/* Animated underline link */
+.u-link {
+  position: relative;
+  display: inline-block;
+}
+.u-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.5s var(--ease);
+}
+.u-link:hover::after,
+.u-link:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+/* ── Global overlays ───────────────────────────────────────── */
+.grain {
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  z-index: 90;
+  opacity: 0.06;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 1s steps(6) infinite;
+}
+@keyframes grain {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3%, 2%);
+  }
+  40% {
+    transform: translate(2%, -4%);
+  }
+  60% {
+    transform: translate(-4%, -1%);
+  }
+  80% {
+    transform: translate(3%, 3%);
+  }
+}
+
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 120;
+  background: var(--red);
+  transform-origin: left;
+  transform: scaleX(0);
+  box-shadow: 0 0 12px var(--red-glow);
+}
+
+.spin-slow {
+  animation: spin 40s linear infinite;
+}
+.spin-rev {
+  animation: spin 28s linear infinite reverse;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .grain {
+    animation: none;
+  }
+}

@@ -1,0 +1,231 @@
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 14px var(--gutter);
+  transform: translateY(-120%);
+  transition: transform 0.9s var(--ease);
+}
+.nav.is-visible {
+  transform: none;
+}
+.nav-bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: var(--max);
+  margin: 0 auto;
+  height: 56px;
+  padding: 0 0.5rem 0 1.1rem;
+  border: 1px solid transparent;
+  transition:
+    background-color 0.5s var(--ease),
+    border-color 0.5s var(--ease),
+    backdrop-filter 0.5s;
+}
+.nav.is-scrolled .nav-bar,
+.nav.is-open .nav-bar {
+  background: rgba(8, 8, 8, 0.62);
+  border-color: var(--line);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--f-display);
+  font-size: 1.3rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+.nav-logo-mark {
+  background: var(--red);
+  padding: 0.28rem 0.4rem 0.22rem;
+}
+.nav-logo-x {
+  color: var(--grey);
+  font-family: var(--f-body);
+  font-size: 1rem;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+.nav-link {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.6rem 0.85rem;
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  color: rgba(245, 245, 245, 0.72);
+  transition: color 0.3s;
+}
+.nav-link:hover,
+.nav-link.is-active {
+  color: var(--white);
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0.85rem;
+  right: 0.85rem;
+  bottom: 0.3rem;
+  height: 1px;
+  background: var(--red);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.45s var(--ease);
+}
+.nav-link:hover::after,
+.nav-link.is-active::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+.nav-idx {
+  font-size: 0.55rem;
+  color: var(--red);
+}
+.nav-cta {
+  margin-left: 0.4rem;
+  border: 1px solid var(--line-strong);
+  color: var(--white);
+  transition:
+    background-color 0.35s,
+    border-color 0.35s;
+}
+.nav-cta:hover {
+  background: var(--red);
+  border-color: var(--red);
+}
+.nav-cta::after {
+  display: none;
+}
+.nav-cta .nav-idx {
+  color: inherit;
+  opacity: 0.6;
+}
+
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.6rem;
+  color: var(--grey);
+  padding-left: 1.25rem;
+  border-left: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.nav-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+}
+
+/* Mobile menu */
+.nav-mobile {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--nav-h) + 3rem) var(--gutter) 2rem;
+  background: var(--bg);
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 0.7s var(--ease);
+  visibility: hidden;
+}
+.nav.is-open .nav-mobile {
+  clip-path: inset(0 0 0 0);
+  visibility: visible;
+}
+.nav-mobile-head {
+  display: flex;
+  justify-content: space-between;
+  color: var(--grey);
+  font-size: 0.62rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+.nav-mobile-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.nav-mobile ul {
+  list-style: none;
+  margin-top: 1rem;
+}
+.nav-mobile li {
+  border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+.nav-mobile li a {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  font-family: var(--f-display);
+  font-size: clamp(2.6rem, 12vw, 4.2rem);
+  line-height: 1;
+  text-transform: uppercase;
+  transform: translateY(110%);
+  transition: transform 0.7s var(--ease);
+  transition-delay: calc(0.08s * var(--i) + 0.15s);
+}
+.nav-mobile li a span {
+  color: var(--red);
+  font-size: 0.7rem;
+}
+.nav-mobile li:last-child a {
+  color: var(--red);
+}
+.nav.is-open .nav-mobile li a {
+  transform: none;
+}
+.nav-mobile-foot {
+  margin-top: auto;
+  color: #555;
+  font-size: 0.6rem;
+}
+
+@media (max-width: 1100px) {
+  .nav-status {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .nav-links {
+    display: none;
+  }
+  .nav-toggle {
+    display: grid;
+    margin-left: 0.75rem;
+  }
+  .nav-status {
+    display: flex;
+    margin-left: auto;
+    border: 0;
+    padding: 0;
+  }
+}
+@media (max-width: 380px) {
+  .nav-status {
+    font-size: 0;
+    gap: 0;
+  }
+}

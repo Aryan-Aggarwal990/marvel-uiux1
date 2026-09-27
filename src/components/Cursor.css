@@ -1,0 +1,73 @@
+.cursor {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .cursor {
+    display: block;
+  }
+}
+.cursor > div {
+  position: fixed;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 150;
+  transform: translate(-100px, -100px);
+}
+.cursor-hidden .cursor {
+  opacity: 0;
+}
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--red);
+  transition:
+    opacity 0.3s,
+    scale 0.3s var(--ease);
+}
+.cursor-dot.is-hover {
+  scale: 0;
+}
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border-radius: 50%;
+  border: 1px solid rgba(245, 245, 245, 0.45);
+  display: grid;
+  place-items: center;
+  mix-blend-mode: difference;
+  transition:
+    scale 0.45s var(--ease),
+    background-color 0.35s,
+    border-color 0.35s;
+}
+.cursor-ring.is-hover {
+  scale: 2;
+  background: rgba(245, 245, 245, 0.95);
+  border-color: transparent;
+}
+.cursor-ring.is-down {
+  scale: 0.8;
+}
+.cursor-ring.is-hover.is-down {
+  scale: 1.6;
+}
+.cursor-label {
+  font-family: var(--f-mono);
+  font-size: 5px;
+  letter-spacing: 0.1em;
+  color: #000;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.cursor-glow {
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(230, 36, 41, 0.1), transparent 62%);
+  z-index: 1 !important;
+}
