@@ -3,7 +3,7 @@ import { gsap, ScrollTrigger } from '../lib/motion'
 
 /** Thin red progress line pinned to the top of the viewport. */
 export default function ScrollProgress() {
-  const ref = useRef(null)
+  const ref = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const setX = gsap.quickSetter(ref.current, 'scaleX')
     const st = ScrollTrigger.create({

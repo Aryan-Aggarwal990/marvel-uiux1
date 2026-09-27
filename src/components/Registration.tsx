@@ -1,17 +1,27 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
 import { ArrowRight, ArrowUpRight, RotateCcw } from 'lucide-react'
-import { gsap, prefersReducedMotion } from '../lib/motion'
-import { useGsap } from '../hooks/useGsap'
-import { eventConfig } from '../config/eventConfig'
+import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
+import { eventConfig, type CharacterId } from '../config/eventConfig'
 import Magnetic from './ui/Magnetic'
 import './Registration.css'
 
-const EMPTY = { name: '', email: '', phone: '', branch: '', hero: '' }
+interface FormValues {
+  name: string
+  email: string
+  phone: string
+  branch: string
+  hero: CharacterId | ''
+}
+type FieldKey = Exclude<keyof FormValues, 'hero'>
+type FormErrors = Partial<Record<FieldKey, string>>
+type Status = 'idle' | 'processing' | 'done'
+
+const EMPTY: FormValues = { name: '', email: '', phone: '', branch: '', hero: '' }
 const LOG = ['Verifying identity', `Syncing with ${eventConfig.universeCode}`, 'Allocating hero slot', 'Encrypting transmission']
 const BLOCKS = 20
 
-function validate(v) {
-  const e = {}
+function validate(v: FormValues): FormErrors {
+  const e: FormErrors = {}
   if (v.name.trim().length < 2) e.name = 'Identify yourself, hero.'
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email.trim())) e.email = 'Invalid signal — check the email.'
   if (!/^(\+?91[\s-]?)?[6-9]\d{9}$/.test(v.phone.replace(/[\s-]/g, ''))) e.phone = 'Enter a valid 10-digit mobile number.'
@@ -19,65 +29,85 @@ function validate(v) {
   return e
 }
 
-async function submitToEndpoint(values) {
+/** POSTs to eventConfig.registration.endpoint when set; otherwise the submission is simulated. */
+async function submitToEndpoint(values: FormValues): Promise<void> {
   const { endpoint } = eventConfig.registration
-  if (!endpoint) return true // simulated
+  if (!endpoint) return
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(values),
   })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return true
 }
 
-export default function Registration({ selectedHero }) {
-  const root = useRef(null)
-  const panel = useRef(null)
-  const [values, setValues] = useState(EMPTY)
-  const [errors, setErrors] = useState({})
-  const [status, setStatus] = useState('idle') // idle | processing | done
+export default function Registration({ selectedHero }: { selectedHero: CharacterId | '' }) {
+  const root = useRef<HTMLElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  const [values, setValues] = useState<FormValues>(EMPTY)
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [status, setStatus] = useState<Status>('idle')
   const [failure, setFailure] = useState('')
   const [heroId, setHeroId] = useState('')
   const { characters, registration } = eventConfig
 
-  // Prefill the hero chosen in the Hero Selector
-  useEffect(() => {
+  // Prefill the hero chosen in the Hero Selector (adjusting state during render, no effect needed)
+  const [lastSelected, setLastSelected] = useState(selectedHero)
+  if (selectedHero !== lastSelected) {
+    setLastSelected(selectedHero)
     if (selectedHero) setValues((v) => ({ ...v, hero: selectedHero }))
-  }, [selectedHero])
+  }
 
-  useGsap(() => {
-    if (prefersReducedMotion()) return
-    gsap.from('.reg-title .mask-inner', {
-      yPercent: 110,
-      duration: 1.3,
-      ease: 'expo.out',
-      stagger: 0.1,
-      scrollTrigger: { trigger: '.reg-title', start: 'top 85%' },
-    })
-    gsap.from('.reg-side > *, .reg-panel', {
-      y: 40,
-      opacity: 0,
-      duration: 1.1,
-      ease: 'expo.out',
-      stagger: 0.08,
-      scrollTrigger: { trigger: '.reg-body', start: 'top 80%' },
-    })
-  }, root)
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return
+      gsap.from('.reg-title .mask-inner', {
+        yPercent: 110,
+        duration: 1.3,
+        ease: 'expo.out',
+        stagger: 0.1,
+        scrollTrigger: { trigger: '.reg-title', start: 'top 85%' },
+      })
+      gsap.from('.reg-side > *, .reg-panel', {
+        y: 40,
+        opacity: 0,
+        duration: 1.1,
+        ease: 'expo.out',
+        stagger: 0.08,
+        scrollTrigger: { trigger: '.reg-body', start: 'top 80%' },
+      })
+    },
+    { scope: root },
+  )
 
-  const set = (key) => (e) => {
+  // Success reveal, run whenever the panel switches to the confirmed view
+  useGSAP(
+    () => {
+      if (status !== 'done' || prefersReducedMotion()) return
+      gsap
+        .timeline()
+        .fromTo('.reg-flash', { opacity: 0.9 }, { opacity: 0, duration: 1.2, ease: 'power2.out' })
+        .from('.reg-done .mask-inner', { yPercent: 110, duration: 1, ease: 'expo.out', stagger: 0.1 }, 0.1)
+        .from('.reg-done-fade', { opacity: 0, y: 20, duration: 0.8, stagger: 0.08, ease: 'expo.out' }, 0.4)
+    },
+    { scope: panel, dependencies: [status] },
+  )
+
+  const set = (key: keyof FormValues) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setValues((v) => ({ ...v, [key]: e.target.value }))
-    if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }))
+    if (key !== 'hero' && errors[key]) setErrors((er) => ({ ...er, [key]: undefined }))
   }
 
   const runSequence = () =>
-    new Promise((resolve) => {
+    new Promise<void>((resolve) => {
       const el = panel.current
-      const bar = el.querySelector('.reg-bar')
-      const pct = el.querySelector('.reg-pct')
+      const bar = el?.querySelector('.reg-bar')
+      const pct = el?.querySelector('.reg-pct')
+      if (!el || !bar || !pct) return resolve()
       const counter = { v: 0 }
-      const tl = gsap.timeline({ onComplete: resolve })
-      tl.from(el.querySelectorAll('.reg-proc > *'), { opacity: 0, y: 12, stagger: 0.08, duration: 0.4 })
+      gsap
+        .timeline({ onComplete: resolve })
+        .from(el.querySelectorAll('.reg-proc > *'), { opacity: 0, y: 12, stagger: 0.08, duration: 0.4 })
         .to(
           counter,
           {
@@ -95,15 +125,15 @@ export default function Registration({ selectedHero }) {
         .from(el.querySelectorAll('.reg-log li'), { opacity: 0, x: -10, stagger: 0.45, duration: 0.3 }, 0.3)
     })
 
-  const onSubmit = async (e) => {
+  const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const found = validate(values)
     setErrors(found)
     setFailure('')
-    if (Object.keys(found).length) {
-      const firstKey = Object.keys(found)[0]
-      root.current.querySelector(`[name="${firstKey}"]`)?.focus()
-      gsap.fromTo('.reg-form', { x: -8 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' })
+    const firstKey = Object.keys(found)[0]
+    if (firstKey) {
+      root.current?.querySelector<HTMLElement>(`[name="${firstKey}"]`)?.focus()
+      gsap.fromTo(root.current?.querySelector('.reg-form') ?? null, { x: -8 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' })
       return
     }
     setStatus('processing')
@@ -114,20 +144,10 @@ export default function Registration({ selectedHero }) {
       setHeroId(`GFG-616-${Math.floor(1000 + Math.random() * 9000)}`)
       setStatus('done')
     } catch (err) {
-      setFailure(`Transmission failed (${err.message}). Please try again.`)
+      setFailure(`Transmission failed (${err instanceof Error ? err.message : 'unknown error'}). Please try again.`)
       setStatus('idle')
     }
   }
-
-  useEffect(() => {
-    if (status !== 'done' || prefersReducedMotion()) return
-    const el = panel.current
-    gsap
-      .timeline()
-      .fromTo(el.querySelector('.reg-flash'), { opacity: 0.9 }, { opacity: 0, duration: 1.2, ease: 'power2.out' })
-      .from(el.querySelectorAll('.reg-done .mask-inner'), { yPercent: 110, duration: 1, ease: 'expo.out', stagger: 0.1 }, 0.1)
-      .from(el.querySelectorAll('.reg-done-fade'), { opacity: 0, y: 20, duration: 0.8, stagger: 0.08, ease: 'expo.out' }, 0.4)
-  }, [status])
 
   const reset = () => {
     setValues({ ...EMPTY, hero: values.hero })
@@ -328,7 +348,14 @@ export default function Registration({ selectedHero }) {
   )
 }
 
-function Field({ label, index, error, children }) {
+interface FieldProps {
+  label: string
+  index: string
+  error?: string
+  children: ReactNode
+}
+
+function Field({ label, index, error, children }: FieldProps) {
   return (
     <label className={`reg-field ${error ? 'has-error' : ''}`}>
       <span className="reg-label mono">

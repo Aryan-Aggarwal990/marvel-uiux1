@@ -1,13 +1,12 @@
 import { useMemo, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
-import { gsap, prefersReducedMotion } from '../lib/motion'
-import { useGsap } from '../hooks/useGsap'
+import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import Magnetic from './ui/Magnetic'
 import './Location.css'
 
 /* Deterministic pseudo-random so the "map" is identical every render */
-function rng(seed) {
+function rng(seed: number) {
   return () => {
     seed = (seed * 16807) % 2147483647
     return (seed - 1) / 2147483646
@@ -17,7 +16,7 @@ function rng(seed) {
 function MapArt() {
   const { streets, blocks } = useMemo(() => {
     const r = rng(616)
-    const streets = []
+    const streets: string[] = []
     for (let x = -200; x < 1400; x += 38 + r() * 40) streets.push(`M${x} -50L${x + 180} 800`)
     for (let y = -100; y < 800; y += 34 + r() * 36) streets.push(`M-50 ${y}L1250 ${y - 160}`)
     const blocks = Array.from({ length: 70 }, () => ({
@@ -67,37 +66,40 @@ function MapArt() {
 }
 
 export default function Location() {
-  const root = useRef(null)
+  const root = useRef<HTMLElement>(null)
   const { university, city, country, coordinates, universeCode } = eventConfig
 
-  useGsap(() => {
-    if (prefersReducedMotion()) return
-    gsap.from('.loc-panel', {
-      clipPath: 'inset(12% 12% 12% 12%)',
-      duration: 1.6,
-      ease: 'expo.inOut',
-      scrollTrigger: { trigger: '.loc-panel', start: 'top 80%' },
-    })
-    gsap.from('.loc-map', {
-      scale: 1.25,
-      ease: 'none',
-      scrollTrigger: { trigger: '.loc-panel', start: 'top bottom', end: 'bottom top', scrub: true },
-    })
-    gsap.from('.loc-route', {
-      strokeDashoffset: 600,
-      duration: 3,
-      ease: 'power2.out',
-      scrollTrigger: { trigger: '.loc-panel', start: 'top 60%' },
-    })
-    gsap.from('.loc-reveal', {
-      y: 30,
-      opacity: 0,
-      stagger: 0.08,
-      duration: 1,
-      ease: 'expo.out',
-      scrollTrigger: { trigger: '.loc-panel', start: 'top 55%' },
-    })
-  }, root)
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return
+      gsap.from('.loc-panel', {
+        clipPath: 'inset(12% 12% 12% 12%)',
+        duration: 1.6,
+        ease: 'expo.inOut',
+        scrollTrigger: { trigger: '.loc-panel', start: 'top 80%' },
+      })
+      gsap.from('.loc-map', {
+        scale: 1.25,
+        ease: 'none',
+        scrollTrigger: { trigger: '.loc-panel', start: 'top bottom', end: 'bottom top', scrub: true },
+      })
+      gsap.from('.loc-route', {
+        strokeDashoffset: 600,
+        duration: 3,
+        ease: 'power2.out',
+        scrollTrigger: { trigger: '.loc-panel', start: 'top 60%' },
+      })
+      gsap.from('.loc-reveal', {
+        y: 30,
+        opacity: 0,
+        stagger: 0.08,
+        duration: 1,
+        ease: 'expo.out',
+        scrollTrigger: { trigger: '.loc-panel', start: 'top 55%' },
+      })
+    },
+    { scope: root },
+  )
 
   return (
     <section className="loc section" id="location" ref={root}>

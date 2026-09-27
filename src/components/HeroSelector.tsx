@@ -1,19 +1,18 @@
 import { useRef, useState } from 'react'
 import { ArrowRight } from 'lucide-react'
-import { gsap, prefersReducedMotion, scrollToTarget } from '../lib/motion'
-import { useGsap } from '../hooks/useGsap'
-import { eventConfig } from '../config/eventConfig'
+import { gsap, useGSAP, prefersReducedMotion, scrollToTarget } from '../lib/motion'
+import { eventConfig, type CharacterId } from '../config/eventConfig'
 import { CharacterVisual } from './art/CharacterArt'
 import './HeroSelector.css'
 
-export default function HeroSelector({ onSelect }) {
-  const root = useRef(null)
+export default function HeroSelector({ onSelect }: { onSelect: (id: CharacterId) => void }) {
+  const root = useRef<HTMLElement>(null)
   const [active, setActive] = useState(0)
   const { characters } = eventConfig
   const current = characters[active]
 
   // On stacked (mobile) layouts, keep the freshly expanded card in view once it settles.
-  const activate = (i, card) => {
+  const activate = (i: number, card: HTMLElement) => {
     if (i === active) return
     setActive(i)
     if (!window.matchMedia('(max-width: 900px)').matches) return
@@ -23,26 +22,29 @@ export default function HeroSelector({ onSelect }) {
     }, 820)
   }
 
-  useGsap(() => {
-    if (prefersReducedMotion()) return
-    gsap.from('.hs-title .mask-inner', {
-      yPercent: 110,
-      duration: 1.2,
-      ease: 'expo.out',
-      stagger: 0.1,
-      scrollTrigger: { trigger: '.hs-title', start: 'top 85%' },
-    })
-    gsap.from('.hs-card', {
-      y: 80,
-      opacity: 0,
-      clipPath: 'inset(100% 0 0 0)',
-      duration: 1.2,
-      ease: 'expo.out',
-      stagger: 0.1,
-      scrollTrigger: { trigger: '.hs-deck', start: 'top 80%' },
-      clearProps: 'clipPath,transform,opacity',
-    })
-  }, root)
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return
+      gsap.from('.hs-title .mask-inner', {
+        yPercent: 110,
+        duration: 1.2,
+        ease: 'expo.out',
+        stagger: 0.1,
+        scrollTrigger: { trigger: '.hs-title', start: 'top 85%' },
+      })
+      gsap.from('.hs-card', {
+        y: 80,
+        opacity: 0,
+        clipPath: 'inset(100% 0 0 0)',
+        duration: 1.2,
+        ease: 'expo.out',
+        stagger: 0.1,
+        scrollTrigger: { trigger: '.hs-deck', start: 'top 80%' },
+        clearProps: 'clipPath,transform,opacity',
+      })
+    },
+    { scope: root },
+  )
 
   return (
     <section className="hs section" id="heroes" ref={root} style={{ '--glow': current.glow }}>
@@ -133,7 +135,7 @@ export default function HeroSelector({ onSelect }) {
                     tabIndex={on ? 0 : -1}
                     onClick={(e) => {
                       e.stopPropagation()
-                      onSelect?.(c.id)
+                      onSelect(c.id)
                     }}
                   >
                     Mission profile <ArrowRight size={16} />

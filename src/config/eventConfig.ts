@@ -7,7 +7,54 @@
  *  null to use the built-in SVG artwork — nothing will break.
  */
 
-export const eventConfig = {
+export type CharacterId = 'ironman' | 'spiderman' | 'strange' | 'panther'
+
+export interface Character {
+  id: CharacterId
+  number: string
+  name: string
+  role: string
+  traits: string[]
+  tags: string
+  description: string
+  clearance: string
+  accent: string
+  /** Secondary colour used for the card glow and section background tint */
+  glow: string
+  /** Path to a licensed image in /public/assets, or null for the built-in SVG art */
+  image: string | null
+}
+
+export type Stat = { label: string } & ({ value: number; pad: number; suffix: string } | { value: null; display: string })
+
+export interface TimelineItem {
+  time: string
+  title: string
+  detail: string
+}
+
+export interface EventConfig {
+  eventName: string
+  organiser: string
+  university: string
+  city: string
+  country: string
+  universeCode: string
+  year: string
+  protocol: string
+  date: string
+  time: string
+  venue: string
+  coordinates: { lat: string; lng: string; decimal: string; mapsUrl: string }
+  registration: { endpoint: string; externalLink: string; branches: string[] }
+  images: { hero: string | null }
+  stats: Stat[]
+  characters: Character[]
+  timeline: TimelineItem[]
+  socials: { instagram: string; linkedin: string; github: string }
+}
+
+export const eventConfig: EventConfig = {
   // ── Identity ──────────────────────────────────────────────
   eventName: 'The Multiverse Is Open',
   organiser: 'GeeksForGeeks Student Chapter',

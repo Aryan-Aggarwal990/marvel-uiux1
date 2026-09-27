@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, ArrowDown, Check } from 'lucide-react'
-import { gsap, isTouch, prefersReducedMotion, scrollToTarget } from '../lib/motion'
-import { useGsap } from '../hooks/useGsap'
+import { gsap, useGSAP, isTouch, prefersReducedMotion, scrollToTarget } from '../lib/motion'
 import { useScramble } from '../hooks/useScramble'
 import { eventConfig } from '../config/eventConfig'
 import { CharacterVisual, WebBackdrop } from './art/CharacterArt'
@@ -9,33 +8,37 @@ import Particles from './ui/Particles'
 import Magnetic from './ui/Magnetic'
 import './Hero.css'
 
-export default function Hero({ ready }) {
-  const root = useRef(null)
+export default function Hero({ ready }: { ready: boolean }) {
+  const root = useRef<HTMLElement>(null)
   const [granted, setGranted] = useState(false)
   const [cta, scrambleCta] = useScramble('ENTER THE EVENT')
-  const intro = useRef(null)
+  const intro = useRef<gsap.core.Timeline | null>(null)
+  const flash = useRef<HTMLSpanElement>(null)
 
   // Build intro + scroll timelines once; play the intro when the loader finishes.
-  useGsap(() => {
-    const reduced = prefersReducedMotion()
-    intro.current = gsap
-      .timeline({ paused: true, defaults: { ease: 'expo.out', duration: reduced ? 0.01 : 1.4 } })
-      .from('.hero-char-wrap', { scale: 1.25, opacity: 0, filter: 'blur(20px)', duration: reduced ? 0.01 : 2 }, 0)
-      .from('.hero-glow', { opacity: 0, scale: 0.6, duration: 2 }, 0)
-      .from('.hero-title .mask-inner', { yPercent: 110, stagger: 0.1 }, 0.15)
-      .from('.hero-reveal', { y: 24, opacity: 0, stagger: 0.07, duration: 1 }, 0.55)
-      .from('.hero-hud > *', { opacity: 0, duration: 0.6, stagger: 0.05 }, 0.8)
-      .from('.hero-reticle', { opacity: 0, rotate: -90, scale: 0.7, duration: 1.8 }, 0.4)
+  useGSAP(
+    () => {
+      const reduced = prefersReducedMotion()
+      intro.current = gsap
+        .timeline({ paused: true, defaults: { ease: 'expo.out', duration: reduced ? 0.01 : 1.4 } })
+        .from('.hero-char-wrap', { scale: 1.25, opacity: 0, filter: 'blur(20px)', duration: reduced ? 0.01 : 2 }, 0)
+        .from('.hero-glow', { opacity: 0, scale: 0.6, duration: 2 }, 0)
+        .from('.hero-title .mask-inner', { yPercent: 110, stagger: 0.1 }, 0.15)
+        .from('.hero-reveal', { y: 24, opacity: 0, stagger: 0.07, duration: 1 }, 0.55)
+        .from('.hero-hud > *', { opacity: 0, duration: 0.6, stagger: 0.05 }, 0.8)
+        .from('.hero-reticle', { opacity: 0, rotate: -90, scale: 0.7, duration: 1.8 }, 0.4)
 
-    if (reduced) return
-    // Scroll-out: text lifts quicker than the character → depth
-    gsap
-      .timeline({ scrollTrigger: { trigger: root.current, start: 'top top', end: 'bottom top', scrub: true } })
-      .to('.hero-content', { yPercent: -35, opacity: 0, ease: 'none' }, 0)
-      .to('.hero-char-scroll', { yPercent: 18, scale: 1.08, ease: 'none' }, 0)
-      .to('.hero-web', { scale: 1.2, opacity: 0, ease: 'none' }, 0)
-      .to('.hero-hud', { opacity: 0, ease: 'none' }, 0)
-  }, root)
+      if (reduced) return
+      // Scroll-out: text lifts quicker than the character → depth
+      gsap
+        .timeline({ scrollTrigger: { trigger: root.current, start: 'top top', end: 'bottom top', scrub: true } })
+        .to('.hero-content', { yPercent: -35, opacity: 0, ease: 'none' }, 0)
+        .to('.hero-char-scroll', { yPercent: 18, scale: 1.08, ease: 'none' }, 0)
+        .to('.hero-web', { scale: 1.2, opacity: 0, ease: 'none' }, 0)
+        .to('.hero-hud', { opacity: 0, ease: 'none' }, 0)
+    },
+    { scope: root },
+  )
 
   useEffect(() => {
     if (ready) intro.current?.play()
@@ -45,12 +48,14 @@ export default function Hero({ ready }) {
   useEffect(() => {
     if (isTouch() || prefersReducedMotion()) return
     const el = root.current
-    const layers = [
+    if (!el) return
+    const depths: [string, number][] = [
       ['.hero-bg-move', 14],
       ['.hero-char-move', 28],
       ['.hero-reticle-move', 40],
       ['.hero-text-move', -14],
-    ].map(([sel, depth]) => {
+    ]
+    const layers = depths.map(([sel, depth]) => {
       const node = el.querySelector(sel)
       return {
         depth,
@@ -59,7 +64,7 @@ export default function Hero({ ready }) {
       }
     })
     const rot = gsap.quickTo(el.querySelector('.hero-char-move'), 'rotationY', { duration: 1.2, ease: 'power3' })
-    const onMove = (e) => {
+    const onMove = (e: PointerEvent) => {
       const nx = e.clientX / window.innerWidth - 0.5
       const ny = e.clientY / window.innerHeight - 0.5
       layers.forEach((l) => {
@@ -76,12 +81,12 @@ export default function Hero({ ready }) {
     if (granted) return
     setGranted(true)
     scrambleCta('ACCESS GRANTED')
-    gsap.fromTo('.hero-cta-flash', { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: 'expo.out', transformOrigin: 'left' })
+    gsap.fromTo(flash.current, { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: 'expo.out', transformOrigin: 'left' })
     setTimeout(() => scrollToTarget('#event', { duration: 1.6 }), 650)
     setTimeout(() => {
       setGranted(false)
       scrambleCta('ENTER THE EVENT')
-      gsap.set('.hero-cta-flash', { scaleX: 0 })
+      gsap.set(flash.current, { scaleX: 0 })
     }, 3200)
   }
 
@@ -148,7 +153,7 @@ export default function Hero({ ready }) {
             <div className="hero-reveal">
               <Magnetic>
                 <button className={`btn btn-bracket hero-cta ${granted ? 'is-granted' : ''}`} onClick={enter} data-cursor="Go">
-                  <span className="hero-cta-flash" aria-hidden="true" />
+                  <span className="hero-cta-flash" ref={flash} aria-hidden="true" />
                   <span aria-hidden="true">[</span>
                   <span className="hero-cta-text" aria-live="polite">
                     {cta}

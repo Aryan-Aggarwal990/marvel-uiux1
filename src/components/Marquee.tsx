@@ -1,7 +1,15 @@
 import './Marquee.css'
 
 /** Infinite CSS ticker. `items` are repeated to fill the track seamlessly. */
-export default function Marquee({ items, variant = 'red', reverse = false, tilt = 0 }) {
+interface MarqueeProps {
+  items: string[]
+  variant?: 'red' | 'dark'
+  reverse?: boolean
+  /** Rotation of the band in degrees */
+  tilt?: number
+}
+
+export default function Marquee({ items, variant = 'red', reverse = false, tilt = 0 }: MarqueeProps) {
   const row = [...items, ...items, ...items]
   return (
     <div className="marquee-wrap" aria-hidden="true">

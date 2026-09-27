@@ -2,12 +2,23 @@ import { useEffect, useRef } from 'react'
 import { prefersReducedMotion } from '../../lib/motion'
 
 /** Lightweight canvas of drifting dust particles. Pauses when offscreen. */
-export default function Particles({ count = 70, className = '' }) {
-  const ref = useRef(null)
+interface Dot {
+  x: number
+  y: number
+  r: number
+  vx: number
+  vy: number
+  a: number
+  red: boolean
+}
+
+export default function Particles({ count = 70, className = '' }: { count?: number; className?: string }) {
+  const ref = useRef<HTMLCanvasElement>(null)
 
   useEffect(() => {
     const canvas = ref.current
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas?.getContext('2d')
+    if (!canvas || !ctx) return
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
     let w = 0
     let h = 0
@@ -15,7 +26,7 @@ export default function Particles({ count = 70, className = '' }) {
     let running = false
     const n = window.innerWidth < 700 ? Math.round(count * 0.5) : count
 
-    const make = () => ({
+    const make = (): Dot => ({
       x: Math.random() * w,
       y: Math.random() * h,
       r: Math.random() * 1.4 + 0.3,
@@ -24,7 +35,7 @@ export default function Particles({ count = 70, className = '' }) {
       a: Math.random() * 0.6 + 0.15,
       red: Math.random() < 0.28,
     })
-    let dots = []
+    let dots: Dot[] = []
 
     const resize = () => {
       w = canvas.clientWidth

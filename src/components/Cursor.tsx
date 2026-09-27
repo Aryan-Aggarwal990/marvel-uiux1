@@ -6,23 +6,26 @@ const INTERACTIVE = 'a, button, input, select, label, [data-cursor]'
 
 /** Dot + trailing ring + soft red glow. Disabled on touch devices. */
 export default function Cursor() {
-  const dot = useRef(null)
-  const ring = useRef(null)
-  const glow = useRef(null)
-  const label = useRef(null)
+  const dot = useRef<HTMLDivElement>(null)
+  const ring = useRef<HTMLDivElement>(null)
+  const glow = useRef<HTMLDivElement>(null)
+  const label = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
-    if (isTouch()) return
+    const dotEl = dot.current
+    const ringEl = ring.current
+    const labelEl = label.current
+    if (isTouch() || !dotEl || !ringEl || !labelEl) return
     document.documentElement.classList.add('has-cursor')
     const slow = prefersReducedMotion() ? 0.01 : 1
-    const dx = gsap.quickTo(dot.current, 'x', { duration: 0.08 * slow })
-    const dy = gsap.quickTo(dot.current, 'y', { duration: 0.08 * slow })
-    const rx = gsap.quickTo(ring.current, 'x', { duration: 0.35 * slow, ease: 'power3' })
-    const ry = gsap.quickTo(ring.current, 'y', { duration: 0.35 * slow, ease: 'power3' })
+    const dx = gsap.quickTo(dotEl, 'x', { duration: 0.08 * slow })
+    const dy = gsap.quickTo(dotEl, 'y', { duration: 0.08 * slow })
+    const rx = gsap.quickTo(ringEl, 'x', { duration: 0.35 * slow, ease: 'power3' })
+    const ry = gsap.quickTo(ringEl, 'y', { duration: 0.35 * slow, ease: 'power3' })
     const gx = gsap.quickTo(glow.current, 'x', { duration: 1 * slow, ease: 'power3' })
     const gy = gsap.quickTo(glow.current, 'y', { duration: 1 * slow, ease: 'power3' })
 
-    const move = (e) => {
+    const move = (e: PointerEvent) => {
       dx(e.clientX)
       dy(e.clientY)
       rx(e.clientX)
@@ -31,14 +34,14 @@ export default function Cursor() {
       gy(e.clientY)
       document.body.classList.remove('cursor-hidden')
     }
-    const over = (e) => {
-      const target = e.target.closest?.(INTERACTIVE)
-      ring.current.classList.toggle('is-hover', !!target)
-      dot.current.classList.toggle('is-hover', !!target)
-      label.current.textContent = target?.dataset?.cursor || ''
+    const over = (e: PointerEvent) => {
+      const target = e.target instanceof Element ? e.target.closest<HTMLElement>(INTERACTIVE) : null
+      ringEl.classList.toggle('is-hover', !!target)
+      dotEl.classList.toggle('is-hover', !!target)
+      labelEl.textContent = target?.dataset.cursor ?? ''
     }
-    const down = () => ring.current.classList.add('is-down')
-    const up = () => ring.current.classList.remove('is-down')
+    const down = () => ringEl.classList.add('is-down')
+    const up = () => ringEl.classList.remove('is-down')
     const leave = () => document.body.classList.add('cursor-hidden')
 
     window.addEventListener('pointermove', move, { passive: true })

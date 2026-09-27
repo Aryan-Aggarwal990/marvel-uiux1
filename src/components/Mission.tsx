@@ -1,6 +1,5 @@
 import { useRef } from 'react'
-import { gsap, prefersReducedMotion } from '../lib/motion'
-import { useGsap } from '../hooks/useGsap'
+import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import './Mission.css'
 
@@ -11,7 +10,7 @@ const PARAGRAPHS = [
 const CLOSER = `Join the ${eventConfig.organiser} for a Marvel-inspired technical experience where creativity meets technology.`
 
 /** Splits a sentence into word spans; words wrapped in *asterisks* get the accent style. */
-function Words({ text }) {
+function Words({ text }: { text: string }) {
   return text.split(' ').map((raw, i) => {
     const accent = raw.startsWith('*')
     const word = raw.replaceAll('*', '')
@@ -24,41 +23,44 @@ function Words({ text }) {
 }
 
 export default function Mission() {
-  const root = useRef(null)
+  const root = useRef<HTMLElement>(null)
 
-  useGsap(() => {
-    if (prefersReducedMotion()) return
-    gsap.fromTo(
-      '.mw',
-      { opacity: 0.12 },
-      {
-        opacity: 1,
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return
+      gsap.fromTo(
+        '.mw',
+        { opacity: 0.12 },
+        {
+          opacity: 1,
+          stagger: 0.1,
+          ease: 'none',
+          scrollTrigger: { trigger: '.mission-copy', start: 'top 75%', end: 'bottom 45%', scrub: true },
+        },
+      )
+      gsap.from('.mission-closer', {
+        y: 30,
+        opacity: 0,
+        duration: 1,
+        ease: 'expo.out',
+        scrollTrigger: { trigger: '.mission-closer', start: 'top 88%' },
+      })
+      gsap.from('.mission-title .mask-inner', {
+        yPercent: 110,
+        duration: 1.2,
+        ease: 'expo.out',
         stagger: 0.1,
+        scrollTrigger: { trigger: '.mission-title', start: 'top 85%' },
+      })
+      gsap.from('.mission-rule', {
+        scaleY: 0,
+        transformOrigin: 'top',
         ease: 'none',
-        scrollTrigger: { trigger: '.mission-copy', start: 'top 75%', end: 'bottom 45%', scrub: true },
-      },
-    )
-    gsap.from('.mission-closer', {
-      y: 30,
-      opacity: 0,
-      duration: 1,
-      ease: 'expo.out',
-      scrollTrigger: { trigger: '.mission-closer', start: 'top 88%' },
-    })
-    gsap.from('.mission-title .mask-inner', {
-      yPercent: 110,
-      duration: 1.2,
-      ease: 'expo.out',
-      stagger: 0.1,
-      scrollTrigger: { trigger: '.mission-title', start: 'top 85%' },
-    })
-    gsap.from('.mission-rule', {
-      scaleY: 0,
-      transformOrigin: 'top',
-      ease: 'none',
-      scrollTrigger: { trigger: root.current, start: 'top 60%', end: 'bottom 60%', scrub: true },
-    })
-  }, root)
+        scrollTrigger: { trigger: root.current, start: 'top 60%', end: 'bottom 60%', scrub: true },
+      })
+    },
+    { scope: root },
+  )
 
   return (
     <section className="mission section" id="mission" ref={root}>

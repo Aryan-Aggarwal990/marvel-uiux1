@@ -3,13 +3,18 @@
  * Replace with licensed/approved artwork by setting `image` fields in eventConfig.js —
  * <CharacterVisual> automatically prefers a real image and falls back to these.
  */
-import { useState } from 'react'
+import { useState, type ReactElement } from 'react'
+import type { CharacterId } from '../../config/eventConfig'
+
+interface ArtProps {
+  className?: string
+}
 
 const V = '0 0 400 500'
 
 /* ── Spider web geometry (shared by the mask and background) ─────────── */
-function webPaths(cx, cy, { spokes = 18, rings = 8, gap = 34, sag = 0.86 } = {}) {
-  const lines = []
+function webPaths(cx: number, cy: number, { spokes = 18, rings = 8, gap = 34, sag = 0.86 } = {}): string[] {
+  const lines: string[] = []
   const angles = Array.from({ length: spokes }, (_, i) => (i / spokes) * Math.PI * 2 - Math.PI / 2)
   const far = gap * (rings + 2)
   angles.forEach((a) => lines.push(`M${cx} ${cy}L${cx + Math.cos(a) * far} ${cy + Math.sin(a) * far}`))
@@ -34,7 +39,7 @@ function webPaths(cx, cy, { spokes = 18, rings = 8, gap = 34, sag = 0.86 } = {})
 
 const SPIDER_WEB = webPaths(200, 255, { spokes: 20, rings: 9, gap: 30 })
 
-export function SpiderArt({ className }) {
+export function SpiderArt({ className }: ArtProps) {
   const head = 'M200 34C302 34 352 118 352 222C352 334 290 440 200 474C110 440 48 334 48 222C48 118 98 34 200 34Z'
   const eye = 'M186 222C168 170 118 140 76 150C74 214 118 262 180 258C190 254 191 236 186 222Z'
   return (
@@ -77,7 +82,7 @@ export function SpiderArt({ className }) {
   )
 }
 
-export function IronArt({ className }) {
+export function IronArt({ className }: ArtProps) {
   const shell = 'M200 28C302 28 346 108 346 206C346 300 332 378 292 428L244 470H156L108 428C68 378 54 300 54 206C54 108 98 28 200 28Z'
   const plate =
     'M200 74C246 74 272 96 284 130L300 246C306 298 300 342 280 380L252 432H148L120 380C100 342 94 298 100 246L116 130C128 96 154 74 200 74Z'
@@ -120,7 +125,7 @@ export function IronArt({ className }) {
   )
 }
 
-export function StrangeArt({ className }) {
+export function StrangeArt({ className }: ArtProps) {
   const ticks = Array.from({ length: 72 }, (_, i) => i * 5)
   const runes = Array.from({ length: 16 }, (_, i) => i * 22.5)
   return (
@@ -164,7 +169,7 @@ export function StrangeArt({ className }) {
   )
 }
 
-export function PantherArt({ className }) {
+export function PantherArt({ className }: ArtProps) {
   const head = 'M200 62C266 62 312 96 330 150L348 70L362 190C366 302 318 402 200 470C82 402 34 302 38 190L52 70L70 150C88 96 134 62 200 62Z'
   const slit = 'M118 238L184 254L176 272L128 262Z'
   return (
@@ -202,7 +207,7 @@ export function PantherArt({ className }) {
 }
 
 /** Large decorative web for the hero background. */
-export function WebBackdrop({ className }) {
+export function WebBackdrop({ className }: ArtProps) {
   const web = webPaths(500, 500, { spokes: 24, rings: 14, gap: 44, sag: 0.9 })
   return (
     <svg className={className} viewBox="0 0 1000 1000" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
@@ -215,10 +220,22 @@ export function WebBackdrop({ className }) {
   )
 }
 
-const ART = { spiderman: SpiderArt, ironman: IronArt, strange: StrangeArt, panther: PantherArt }
+const ART: Record<CharacterId, (props: ArtProps) => ReactElement> = {
+  spiderman: SpiderArt,
+  ironman: IronArt,
+  strange: StrangeArt,
+  panther: PantherArt,
+}
 
 /** Prefers a real image (from config); falls back to built-in SVG art if missing or broken. */
-export function CharacterVisual({ id, image, alt, className = '' }) {
+interface CharacterVisualProps {
+  id: CharacterId
+  image: string | null
+  alt: string
+  className?: string
+}
+
+export function CharacterVisual({ id, image, alt, className = '' }: CharacterVisualProps) {
   const [failed, setFailed] = useState(false)
   if (image && !failed) {
     return <img className={className} src={image} alt={alt} loading="lazy" decoding="async" onError={() => setFailed(true)} />

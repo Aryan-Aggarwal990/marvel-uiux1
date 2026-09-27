@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MouseEvent } from 'react'
 import { Menu, X } from 'lucide-react'
 import { scrollToTarget, lockScroll, ScrollTrigger } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
@@ -13,14 +13,13 @@ const LINKS = [
   { label: 'Register', href: '#register' },
 ]
 
-export default function Navbar({ visible }) {
-  const [scrolled, setScrolled] = useState(false)
+export default function Navbar({ visible }: { visible: boolean }) {
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 40)
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState('')
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
-    onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -38,14 +37,21 @@ export default function Navbar({ visible }) {
     return () => triggers.forEach((t) => t.kill())
   }, [])
 
+  // While the mobile menu is open: freeze page scroll and close on Escape
   useEffect(() => {
-    lockScroll(open)
-    const onKey = (e) => e.key === 'Escape' && setOpen(false)
+    if (!open) return
+    lockScroll(true)
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      lockScroll(false)
+      window.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
-  const go = (e, href) => {
+  const go = (e: MouseEvent, href: string) => {
     e.preventDefault()
     setOpen(false)
     // wait a frame so the scroll lock is released first

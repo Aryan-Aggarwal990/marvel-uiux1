@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { initSmoothScroll, lockScroll, scrollToTarget, ScrollTrigger } from './lib/motion'
-import { eventConfig } from './config/eventConfig'
+import { eventConfig, type CharacterId } from './config/eventConfig'
 import Loader from './components/Loader'
 import Cursor from './components/Cursor'
 import ScrollProgress from './components/ScrollProgress'
@@ -33,7 +33,7 @@ const HUD_TICKER = [
 export default function App() {
   const [revealed, setRevealed] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [selectedHero, setSelectedHero] = useState('')
+  const [selectedHero, setSelectedHero] = useState<CharacterId | ''>('')
 
   useEffect(() => {
     window.history.scrollRestoration = 'manual'
@@ -50,7 +50,7 @@ export default function App() {
     lockScroll(false)
   }, [])
 
-  const selectHero = useCallback((id) => {
+  const selectHero = useCallback((id: CharacterId) => {
     setSelectedHero(id)
     scrollToTarget('#register', { duration: 1.8 })
   }, [])

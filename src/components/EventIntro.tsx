@@ -1,11 +1,10 @@
 import { useRef } from 'react'
-import { gsap, prefersReducedMotion } from '../lib/motion'
-import { useGsap } from '../hooks/useGsap'
+import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import './EventIntro.css'
 
 export default function EventIntro() {
-  const root = useRef(null)
+  const root = useRef<HTMLElement>(null)
   const { university, city, date, time, venue, stats } = eventConfig
 
   const details = [
@@ -15,48 +14,53 @@ export default function EventIntro() {
     { label: 'Venue', value: venue, sub: `${university} campus` },
   ]
 
-  useGsap(() => {
-    if (prefersReducedMotion()) return
-    gsap.from('.intro-title .mask-inner', {
-      yPercent: 110,
-      duration: 1.2,
-      ease: 'expo.out',
-      stagger: 0.12,
-      scrollTrigger: { trigger: '.intro-title', start: 'top 80%' },
-    })
-    gsap.from('.intro-cell', {
-      clipPath: 'inset(0 0 100% 0)',
-      duration: 1,
-      ease: 'expo.inOut',
-      stagger: 0.1,
-      scrollTrigger: { trigger: '.intro-grid', start: 'top 85%' },
-    })
-    gsap.from('.intro-line', {
-      scaleX: 0,
-      transformOrigin: 'left',
-      duration: 1.4,
-      ease: 'expo.inOut',
-      scrollTrigger: { trigger: '.intro-grid', start: 'top 85%' },
-    })
-    gsap.to('.intro-ghost', {
-      xPercent: -25,
-      ease: 'none',
-      scrollTrigger: { trigger: root.current, start: 'top bottom', end: 'bottom top', scrub: true },
-    })
-    // Number counting
-    root.current.querySelectorAll('[data-count]').forEach((el) => {
-      const target = Number(el.dataset.count)
-      const pad = Number(el.dataset.pad || 0)
-      const obj = { v: 0 }
-      gsap.to(obj, {
-        v: target,
-        duration: 1.6,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: el, start: 'top 90%' },
-        onUpdate: () => (el.textContent = String(Math.round(obj.v)).padStart(pad, '0')),
+  useGSAP(
+    () => {
+      if (prefersReducedMotion()) return
+      gsap.from('.intro-title .mask-inner', {
+        yPercent: 110,
+        duration: 1.2,
+        ease: 'expo.out',
+        stagger: 0.12,
+        scrollTrigger: { trigger: '.intro-title', start: 'top 80%' },
       })
-    })
-  }, root)
+      gsap.from('.intro-cell', {
+        clipPath: 'inset(0 0 100% 0)',
+        duration: 1,
+        ease: 'expo.inOut',
+        stagger: 0.1,
+        scrollTrigger: { trigger: '.intro-grid', start: 'top 85%' },
+      })
+      gsap.from('.intro-line', {
+        scaleX: 0,
+        transformOrigin: 'left',
+        duration: 1.4,
+        ease: 'expo.inOut',
+        scrollTrigger: { trigger: '.intro-grid', start: 'top 85%' },
+      })
+      gsap.to('.intro-ghost', {
+        xPercent: -25,
+        ease: 'none',
+        scrollTrigger: { trigger: root.current, start: 'top bottom', end: 'bottom top', scrub: true },
+      })
+      // Number counting
+      gsap.utils.toArray<HTMLElement>('[data-count]').forEach((el) => {
+        const target = Number(el.dataset.count)
+        const pad = Number(el.dataset.pad || 0)
+        const obj = { v: 0 }
+        gsap.to(obj, {
+          v: target,
+          duration: 1.6,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: el, start: 'top 90%' },
+          onUpdate: () => {
+            el.textContent = String(Math.round(obj.v)).padStart(pad, '0')
+          },
+        })
+      })
+    },
+    { scope: root },
+  )
 
   return (
     <section className="intro section" id="event" ref={root}>
