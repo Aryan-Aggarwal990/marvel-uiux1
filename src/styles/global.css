@@ -5,9 +5,22 @@
   --panel: #111111;
   --line: rgba(245, 245, 245, 0.1);
   --line-strong: rgba(245, 245, 245, 0.22);
+  /* Brand red (logo only). Everything else uses the live, hero-driven accent tokens below. */
   --red: #e62429;
-  --red-deep: #8d0f13;
-  --red-glow: rgba(230, 36, 41, 0.45);
+  /* Theme tokens — tweened by src/theme/applyTheme.ts when the active hero changes */
+  --accent: #e62429;
+  --accent-2: #7c8cff;
+  --on-accent: #f5f5f5;
+  --accent-glow: color-mix(in srgb, var(--accent) 45%, transparent);
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+
+  /* HUD chrome — overridden per hero via [data-hud] */
+  --hud-radius: 0px;
+  --hud-border: 1px;
+  --hud-clip: none;
+  --hud-bg: transparent;
+  --hud-skew: 0deg;
+  --hud-track: 0.16em;
   --white: #f5f5f5;
   --grey: #8a8a8a;
   --grey-dark: #111111;
@@ -58,8 +71,8 @@ body {
 }
 
 ::selection {
-  background: var(--red);
-  color: var(--white);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
 img,
@@ -86,7 +99,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--red);
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
 
@@ -149,18 +162,18 @@ button {
   content: '';
   width: 28px;
   height: 1px;
-  background: var(--red);
+  background: var(--accent);
 }
 
-.red {
-  color: var(--red);
+.accent {
+  color: var(--accent);
 }
 .muted {
   color: var(--grey);
 }
 .outline-text {
   color: transparent;
-  -webkit-text-stroke: 1.5px rgba(245, 245, 245, 0.85);
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--accent-2) 35%, rgba(245, 245, 245, 0.9));
 }
 
 /* Masked line reveal: wrap text in .mask > .mask-inner */
@@ -181,10 +194,14 @@ button {
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.7rem;
-  border: 1px solid var(--line-strong);
+  border: var(--hud-border) solid var(--line-strong);
+  border-radius: var(--hud-radius);
+  clip-path: var(--hud-clip);
+  background: var(--hud-bg);
+  transform: skewX(var(--hud-skew));
   font-family: var(--f-mono);
   font-size: 0.66rem;
-  letter-spacing: 0.16em;
+  letter-spacing: var(--hud-track);
   text-transform: uppercase;
   color: var(--grey);
   white-space: nowrap;
@@ -199,7 +216,7 @@ button {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--accent);
   flex-shrink: 0;
 }
 .pulse-dot::after {
@@ -207,7 +224,7 @@ button {
   position: absolute;
   inset: -4px;
   border-radius: 50%;
-  border: 1px solid var(--red);
+  border: 1px solid var(--accent);
   animation: pulse 1.8s var(--ease) infinite;
 }
 .pulse-dot.green {
@@ -264,6 +281,76 @@ button {
   border-width: 0 1px 1px 0;
 }
 
+/* ── Hero-driven HUD chrome ───────────────────────────────────
+   [data-hud] is set on <html> by the theme engine. */
+:root[data-hud='comic'] {
+  --hud-border: 2px;
+  --hud-radius: 2px;
+  --hud-skew: -6deg;
+  --hud-bg: var(--accent-soft);
+}
+:root[data-hud='technical'] {
+  --hud-clip: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  --hud-bg: color-mix(in srgb, var(--accent) 7%, transparent);
+}
+:root[data-hud='mystic'] {
+  --hud-radius: 999px;
+  --hud-bg: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+:root[data-hud='elegant'] {
+  --hud-track: 0.3em;
+  --hud-bg: linear-gradient(90deg, var(--accent-soft), transparent);
+}
+:root[data-hud='norse'] {
+  --hud-clip: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  --hud-bg: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+:root[data-hud='heavy'] {
+  --hud-border: 3px;
+  --hud-track: 0.1em;
+  --hud-bg: var(--accent-soft);
+}
+:root[data-hud='military'] {
+  --hud-clip: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  --hud-bg: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* ── Hero-driven typography: accent words inside display headings ── */
+.display .accent {
+  color: var(--accent);
+}
+:root[data-type='chromatic'] .display .accent {
+  text-shadow:
+    -0.035em 0 0 var(--accent-2),
+    0.03em 0 0 rgba(255, 255, 255, 0.18);
+}
+:root[data-type='metallic'] .display .accent {
+  background: linear-gradient(180deg, #fff 0%, var(--accent) 42%, color-mix(in srgb, var(--accent) 45%, #000) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+:root[data-type='glow'] .display .accent {
+  text-shadow:
+    0 0 0.2em var(--accent-glow),
+    0 0 0.6em var(--accent-glow);
+}
+:root[data-type='heavy'] .display .accent {
+  text-shadow:
+    0.04em 0.04em 0 color-mix(in srgb, var(--accent) 35%, #000),
+    0.08em 0.08em 0 color-mix(in srgb, var(--accent-2) 60%, #000);
+}
+:root[data-type='comic'] .display .accent {
+  display: inline-block;
+  rotate: -2deg;
+  text-shadow:
+    0.04em 0.04em 0 #000,
+    0.07em 0.07em 0 var(--accent-2);
+}
+:root[data-type='tracked'] .display .accent {
+  letter-spacing: 0.08em;
+}
+
 /* ── Buttons ───────────────────────────────────────────────── */
 .magnetic {
   display: inline-block;
@@ -285,6 +372,8 @@ button {
   text-transform: uppercase;
   color: var(--white);
   border: 1px solid var(--line-strong);
+  border-radius: var(--hud-radius);
+  clip-path: var(--hud-clip);
   overflow: hidden;
   isolation: isolate;
   transition:
@@ -296,7 +385,7 @@ button {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--red);
+  background: var(--accent);
   transform: scaleY(0);
   transform-origin: bottom;
   transition: transform 0.5s var(--ease);
@@ -307,7 +396,8 @@ button {
   transform: scaleY(1);
 }
 .btn:hover {
-  border-color: var(--red);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 .btn svg {
   transition: transform 0.4s var(--ease);
@@ -320,11 +410,13 @@ button {
   position: absolute;
   inset: 5px;
   border: 1px dashed rgba(245, 245, 245, 0.14);
+  border-radius: inherit;
   pointer-events: none;
 }
 .btn-solid {
-  background: var(--red);
-  border-color: var(--red);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
 }
 .btn-solid::before {
   background: var(--white);
@@ -394,10 +486,10 @@ button {
   right: 0;
   height: 2px;
   z-index: 120;
-  background: var(--red);
+  background: var(--accent);
   transform-origin: left;
   transform: scaleX(0);
-  box-shadow: 0 0 12px var(--red-glow);
+  box-shadow: 0 0 12px var(--accent-glow);
 }
 
 .spin-slow {

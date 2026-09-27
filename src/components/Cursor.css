@@ -22,7 +22,7 @@
   height: 6px;
   margin: -3px 0 0 -3px;
   border-radius: 50%;
-  background: var(--red);
+  background: var(--accent);
   transition:
     opacity 0.3s,
     scale 0.3s var(--ease);
@@ -68,6 +68,6 @@
   height: 520px;
   margin: -260px 0 0 -260px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(230, 36, 41, 0.1), transparent 62%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 10%, transparent), transparent 62%);
   z-index: 1 !important;
 }

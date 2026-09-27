@@ -26,23 +26,45 @@ The config files (`tsconfig*.json`, `vite.config.ts`, `.oxlintrc.json`) match th
 
 ## Edit content
 
-All event content is in **`src/config/eventConfig.ts`**. It's typed, so a typo in a field shows up as a TypeScript error.
+- **Event details** (name, date, time, venue, timeline, socials, registration endpoint):
+  **`src/config/eventConfig.ts`**
+- **Hero roster** (12 heroes: names, taglines, microcopy, challenge track, artwork path, and the
+  colours, motif, particles, transition, HUD and type style of each hero's world):
+  **`src/config/characters.ts`**
+
+Both files are typed, so a typo in a field shows up as a TypeScript error.
+
+## How hero worlds work
+
+Choosing a hero (in the lineup, the hero-section orbit, the registration picker or the footer roster)
+calls `select()` from `src/theme/heroContext.ts`. `HeroThemeProvider` then:
+
+1. Plays a 1.2s **dimension shift** (`src/theme/DimensionShift.tsx`) that radiates from the click point.
+   Each hero has its own style: web lines, HUD scan, portal rings, lightning, shockwave, glitch and more.
+2. At the peak, swaps the world: it tweens the `--accent`, `--accent-2` and `--bg` tokens on `<html>`,
+   and sets `data-hud` and `data-type` for the HUD chrome and heading treatment.
+3. `WorldBackdrop` crossfades that hero's background motif and switches the global particle behaviour.
+
+The choice is remembered in `localStorage`. With `prefers-reduced-motion`, worlds switch instantly
+with no transition or particle motion.
 
 ## Structure
 
 ```
 src/
   main.tsx · App.tsx · vite-env.d.ts   (vite-env also types CSS custom properties)
-  config/eventConfig.ts     ← edit me
+  config/eventConfig.ts     ← event content
+  config/characters.ts      ← hero roster + per-hero world themes
+  theme/                    hero context, provider, dimension shift, world backdrop, motifs, particles
   lib/motion.ts             GSAP + ScrollTrigger + useGSAP + Lenis, scroll helpers
   hooks/useScramble.ts      text-decode effect
   components/
     Loader, Cursor, ScrollProgress, Navbar, Hero, Marquee, EventIntro,
     Mission, HeroSelector, Timeline, Location, Registration, Footer
-    art/CharacterArt.tsx    SVG placeholder art + image-with-fallback
-    ui/                     Magnetic, ScrambleText, Particles, SocialIcons
+    art/                    12 stylised SVG portraits, emblems, image-with-fallback
+    ui/                     Magnetic, ScrambleText, SocialIcons
   styles/global.css         design tokens, type scale, buttons, HUD bits
-public/assets/              drop licensed artwork here (see its README)
+public/assets/characters/   drop licensed hero artwork here (see its README)
 ```
 
 ## Deploy (Vercel)

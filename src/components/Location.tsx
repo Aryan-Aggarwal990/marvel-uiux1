@@ -133,7 +133,7 @@ export default function Location() {
             </div>
             <div className="loc-reveal loc-coords">
               <span className="display">{coordinates.lat}</span>
-              <span className="display red">{coordinates.lng}</span>
+              <span className="display accent">{coordinates.lng}</span>
             </div>
             <div className="loc-reveal">
               <Magnetic>
@@ -155,7 +155,7 @@ export default function Location() {
             </div>
             <div>
               <dt>Signal</dt>
-              <dd className="red">Locked</dd>
+              <dd className="accent">Locked</dd>
             </div>
           </dl>
           <div className="corners" aria-hidden="true">

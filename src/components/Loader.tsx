@@ -59,7 +59,7 @@ export default function Loader({ onReveal, onDone }: LoaderProps) {
       <div className="ld-inner">
         <p className="mask mono ld-top">
           <span className="mask-inner ld-line">
-            GFG <span className="red">//</span> {eventConfig.universeCode}
+            GFG <span className="accent">//</span> {eventConfig.universeCode}
           </span>
         </p>
         <p className="mask ld-title">

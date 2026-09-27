@@ -3,13 +3,16 @@ import { ArrowRight, ArrowDown, Check } from 'lucide-react'
 import { gsap, useGSAP, isTouch, prefersReducedMotion, scrollToTarget } from '../lib/motion'
 import { useScramble } from '../hooks/useScramble'
 import { eventConfig } from '../config/eventConfig'
-import { CharacterVisual, WebBackdrop } from './art/CharacterArt'
-import Particles from './ui/Particles'
+import { heroes } from '../config/characters'
+import { useHero } from '../theme/heroContext'
+import { HeroPortrait } from './art/CharacterArt'
+import { HeroEmblem } from './art/emblems'
 import Magnetic from './ui/Magnetic'
 import './Hero.css'
 
 export default function Hero({ ready }: { ready: boolean }) {
   const root = useRef<HTMLElement>(null)
+  const { active, select } = useHero()
   const [granted, setGranted] = useState(false)
   const [cta, scrambleCta] = useScramble('ENTER THE EVENT')
   const intro = useRef<gsap.core.Timeline | null>(null)
@@ -34,7 +37,6 @@ export default function Hero({ ready }: { ready: boolean }) {
         .timeline({ scrollTrigger: { trigger: root.current, start: 'top top', end: 'bottom top', scrub: true } })
         .to('.hero-content', { yPercent: -35, opacity: 0, ease: 'none' }, 0)
         .to('.hero-char-scroll', { yPercent: 18, scale: 1.08, ease: 'none' }, 0)
-        .to('.hero-web', { scale: 1.2, opacity: 0, ease: 'none' }, 0)
         .to('.hero-hud', { opacity: 0, ease: 'none' }, 0)
     },
     { scope: root },
@@ -96,30 +98,51 @@ export default function Hero({ ready }: { ready: boolean }) {
       <div className="hero-bg" aria-hidden="true">
         <div className="hero-bg-move">
           <div className="hero-grid" />
-          <WebBackdrop className="hero-web" />
         </div>
         <div className="hero-streak s1" />
         <div className="hero-streak s2" />
         <div className="hero-streak s3" />
-        <Particles className="hero-particles" />
       </div>
 
       {/* ── Character ── */}
-      <div className="hero-char-scroll" aria-hidden="true">
-        <div className="hero-char-move">
+      <div className="hero-char-scroll">
+        <div className="hero-char-move" aria-hidden="true">
           <div className="hero-glow" />
-          <div className="hero-char-wrap">
-            <CharacterVisual id="spiderman" image={eventConfig.images.hero} alt="" className="hero-char" />
-          </div>
+          {active ? (
+            <div className="hero-char-wrap is-hero" key={active.id}>
+              <HeroPortrait hero={active} className="hero-char" />
+            </div>
+          ) : (
+            <div className="hero-char-wrap is-core" key="core">
+              <MultiverseCore />
+            </div>
+          )}
         </div>
         <div className="hero-reticle-move">
-          <svg className="hero-reticle" viewBox="0 0 200 200">
+          <nav className="hero-orbit" aria-label="Jump straight into a hero's world">
+            {heroes.map((h, i) => (
+              <button
+                key={h.id}
+                className={`orbit-item ${h.id === active?.id ? 'is-active' : ''}`}
+                style={{ '--i': i, '--c1': h.theme.accent }}
+                onClick={(e) => select(h.id, { x: e.clientX || window.innerWidth / 2, y: e.clientY || window.innerHeight / 2 })}
+                aria-label={`Enter ${h.name}'s world`}
+                aria-pressed={h.id === active?.id}
+                data-cursor={h.name}
+              >
+                <span className="orbit-inner">
+                  <HeroEmblem id={h.id} className="orbit-emblem" />
+                </span>
+              </button>
+            ))}
+          </nav>
+          <svg className="hero-reticle" viewBox="0 0 200 200" aria-hidden="true">
             <circle cx="100" cy="100" r="96" />
             <circle cx="100" cy="100" r="80" strokeDasharray="2 6" />
             <path d="M100 0v14M100 186v14M0 100h14M186 100h14" />
           </svg>
-          <span className="hero-lock mono">
-            <span className="pulse-dot" /> TARGET // EARTH-616 · LOCKED
+          <span className="hero-lock mono" aria-hidden="true">
+            <span className="pulse-dot" /> {active ? `Active hero // ${active.name}` : 'Target // Earth-616'} · Locked
           </span>
         </div>
       </div>
@@ -130,7 +153,8 @@ export default function Hero({ ready }: { ready: boolean }) {
       <div className="hero-content container">
         <div className="hero-text-move">
           <p className="hero-reveal eyebrow">
-            {eventConfig.universeCode} <span className="red">//</span> {eventConfig.university}
+            {active ? active.code : eventConfig.universeCode} <span className="accent">//</span>{' '}
+            {active ? `Active hero: ${active.name}` : eventConfig.university}
           </p>
           <h1 className="hero-title display display-xl">
             <span className="mask">
@@ -141,7 +165,7 @@ export default function Hero({ ready }: { ready: boolean }) {
             </span>
             <span className="mask">
               <span className="mask-inner">
-                Is open<span className="red">.</span>
+                Is open<span className="accent">.</span>
               </span>
             </span>
           </h1>
@@ -149,6 +173,11 @@ export default function Hero({ ready }: { ready: boolean }) {
             <p className="hero-presents hero-reveal">
               <span>{eventConfig.organiser}</span>
               <span className="muted">Presents</span>
+              {active && (
+                <span className="hero-quote accent" key={active.id}>
+                  “{active.tagline}”
+                </span>
+              )}
             </p>
             <div className="hero-reveal">
               <Magnetic>
@@ -170,7 +199,7 @@ export default function Hero({ ready }: { ready: boolean }) {
       {/* ── HUD frame ── */}
       <div className="hero-hud" aria-hidden="true">
         <span className="hud-tl mono">
-          <span className="pulse-dot" /> Multiverse signal detected
+          <span className="pulse-dot" /> {active ? active.status[0] : 'Multiverse signal detected'}
         </span>
         <span className="hud-tr mono">
           {eventConfig.coordinates.lat} · {eventConfig.coordinates.lng}
@@ -179,11 +208,61 @@ export default function Hero({ ready }: { ready: boolean }) {
           <ArrowDown size={14} className="hud-bounce" /> Scroll to enter
         </span>
         <span className="hud-br mono">
-          Signal strength // <b>100%</b>
-          <br />
-          Threat level // <b className="red">Unknown</b>
+          {active ? (
+            <>
+              {active.status[1]}
+              <br />
+              <b className="accent">{active.status[2]}</b>
+            </>
+          ) : (
+            <>
+              Signal strength // <b>100%</b>
+              <br />
+              Threat level // <b className="accent">Unknown</b>
+            </>
+          )}
         </span>
       </div>
     </section>
+  )
+}
+
+/** Default hero visual before any hero is chosen: a portal ringed with every hero's colour. */
+function MultiverseCore() {
+  const arc = (i: number) => {
+    const a0 = (i / heroes.length) * Math.PI * 2 - Math.PI / 2 + 0.04
+    const a1 = ((i + 1) / heroes.length) * Math.PI * 2 - Math.PI / 2 - 0.04
+    const r = 150
+    return `M${200 + Math.cos(a0) * r} ${250 + Math.sin(a0) * r}A${r} ${r} 0 0 1 ${200 + Math.cos(a1) * r} ${250 + Math.sin(a1) * r}`
+  }
+  return (
+    <svg className="hero-char core-svg" viewBox="0 0 400 500">
+      <defs>
+        <radialGradient id="core-glow">
+          <stop offset="0" stopColor="#fff" stopOpacity=".9" />
+          <stop offset=".25" stopColor="var(--accent)" stopOpacity=".55" />
+          <stop offset=".7" stopColor="var(--accent-2)" stopOpacity=".08" />
+          <stop offset="1" stopColor="var(--accent-2)" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <circle cx="200" cy="250" r="190" fill="url(#core-glow)" className="core-pulse" />
+      <g className="spin-slow" style={{ transformOrigin: '200px 250px' }} fill="none" strokeWidth="6" strokeLinecap="round">
+        {heroes.map((h, i) => (
+          <path key={h.id} d={arc(i)} stroke={h.theme.accent} />
+        ))}
+      </g>
+      <g className="spin-rev" style={{ transformOrigin: '200px 250px' }} fill="none" stroke="#f5f5f5" strokeOpacity=".35">
+        <circle cx="200" cy="250" r="120" strokeDasharray="2 8" />
+        <circle cx="200" cy="250" r="176" strokeDasharray="1 5" />
+        <rect x="115" y="165" width="170" height="170" transform="rotate(45 200 250)" />
+      </g>
+      <circle cx="200" cy="250" r="70" fill="#050505" stroke="#f5f5f5" strokeOpacity=".6" />
+      <text x="200" y="246" textAnchor="middle" className="core-count">
+        {heroes.length}
+      </text>
+      <text x="200" y="272" textAnchor="middle" className="core-label">
+        VARIANTS
+      </text>
+    </svg>
   )
 }

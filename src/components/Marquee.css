@@ -13,8 +13,8 @@
   margin-left: -2%;
 }
 .marquee-red {
-  background: var(--red);
-  color: var(--white);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 .marquee-dark {
   background: var(--bg);
@@ -57,7 +57,7 @@
   opacity: 0.7;
 }
 .marquee-dark .marquee-sep {
-  color: var(--red);
+  color: var(--accent);
   opacity: 1;
 }
 @keyframes marquee {

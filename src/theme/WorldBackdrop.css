@@ -1,0 +1,157 @@
+.world {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+.world-glow {
+  position: absolute;
+  width: 70vmax;
+  height: 70vmax;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.5;
+}
+.world-glow-a {
+  right: -22vmax;
+  top: -18vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 30%, transparent), transparent 62%);
+  animation: glow-drift 18s ease-in-out infinite alternate;
+}
+.world-glow-b {
+  left: -26vmax;
+  bottom: -30vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 62%);
+  animation: glow-drift 22s ease-in-out infinite alternate-reverse;
+}
+@keyframes glow-drift {
+  to {
+    translate: -6vmax 5vmax;
+  }
+}
+
+/* Multiverse (no hero yet): a slow aurora of every hero's colour */
+:root[data-hero='none'] .world::before {
+  content: '';
+  position: absolute;
+  inset: -40%;
+  background: conic-gradient(from 0deg, #e62429, #f5b843, #ff8a2a, #a57bff, #5aa2ff, #46e35a, #3d74f5, #ff2e63, #3fd17a, #e62429);
+  opacity: 0.07;
+  filter: blur(80px);
+  animation: spin 60s linear infinite;
+}
+
+.world-motif {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  mask-image: radial-gradient(ellipse 85% 85% at 60% 45%, #000 30%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 85% at 60% 45%, #000 30%, transparent 85%);
+}
+.world-motif[data-motif='vibranium'],
+.world-motif[data-motif='timeline'] {
+  opacity: 0.2;
+}
+.world-motif[data-motif='comic'],
+.world-motif[data-motif='glitch'] {
+  opacity: 0.13;
+}
+.world-motif.is-entering {
+  animation: motif-in 1.1s var(--ease) both;
+}
+.world-motif.is-leaving {
+  animation: motif-out 0.9s var(--ease) both;
+}
+@keyframes motif-in {
+  from {
+    opacity: 0;
+    scale: 1.08;
+  }
+}
+@keyframes motif-out {
+  to {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+.world-motif-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.world-particles {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.world-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 120% 100% at 50% 40%, transparent 45%, color-mix(in srgb, var(--bg) 85%, #000) 100%);
+}
+
+/* Motif-specific life */
+.flicker {
+  animation: flicker 7s steps(1) infinite;
+}
+@keyframes flicker {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  46% {
+    opacity: 1;
+  }
+  47% {
+    opacity: 0.2;
+  }
+  48% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 2.4s var(--ease) infinite;
+}
+@keyframes pulse-ring {
+  0% {
+    scale: 0.6;
+    opacity: 1;
+  }
+  100% {
+    scale: 1.5;
+    opacity: 0;
+  }
+}
+.glitch-bar {
+  animation: glitch-bar 4s steps(1) infinite;
+}
+@keyframes glitch-bar {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+    translate: 20px 0;
+  }
+  14% {
+    opacity: 0.6;
+    translate: -30px 0;
+  }
+  18% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-glow,
+  .world::before {
+    animation: none !important;
+  }
+}
