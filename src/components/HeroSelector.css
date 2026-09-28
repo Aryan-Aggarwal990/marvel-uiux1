@@ -553,3 +553,6 @@
     width: auto;
   }
 }
+.hs-stat {
+  white-space: nowrap;
+}

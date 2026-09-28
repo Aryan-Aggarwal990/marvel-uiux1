@@ -1,4 +1,4 @@
-import { useRef, useState, type MouseEvent } from 'react'
+import { useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ArrowDown, ArrowRight, Check, Heart, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion, scrollToTarget } from '../lib/motion'
 import { heroes, tracks, type Hero, type HeroId } from '../config/characters'
@@ -9,7 +9,7 @@ import { HeroEmblem } from './art/emblems'
 import './HeroSelector.css'
 
 /** "You // 3× · World // 128 · ♥ 12" — only the parts we actually know. */
-function statsLine(mine: number, world: { selections: number; favorites: number } | undefined): string | null {
+function statsLine(mine: number, world: { selections: number; favorites: number } | undefined): ReactNode {
   const parts: string[] = []
   if (mine > 0) parts.push(`You // ${mine}×`)
   if (world)
@@ -17,7 +17,14 @@ function statsLine(mine: number, world: { selections: number; favorites: number 
       `World // ${world.selections.toLocaleString()} ${world.selections === 1 ? 'pick' : 'picks'}`,
       `♥ ${world.favorites.toLocaleString()}`,
     )
-  return parts.length ? parts.join(' · ') : null
+  if (!parts.length) return null
+  // Each part wraps as a unit so a number never separates from its label
+  return parts.map((part, i) => (
+    <span key={part} className="hs-stat">
+      {i > 0 && ' · '}
+      {part}
+    </span>
+  ))
 }
 
 /** Where the dimension shift should radiate from: the pointer, or the element for keyboard clicks. */

@@ -67,6 +67,17 @@ src/
 public/assets/characters/   drop licensed hero artwork here (see its README)
 ```
 
+## Optional backend (Supabase)
+
+Favourites, hero-world persistence, anonymous interaction stats and saved registrations are powered by
+Supabase **when configured**. Without the two env vars below the site runs exactly as before.
+
+```bash
+cp .env.example .env.local   # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+```
+
+Full setup (schema SQL, anonymous sign-ins, Vercel env vars, testing, security): **[docs/BACKEND.md](docs/BACKEND.md)**.
+
 ## Deploy (Vercel)
 
 Import the repository at vercel.com/new. The Vite preset is detected automatically (build `npm run build`, output `dist`). Then deploy.
