@@ -9,11 +9,14 @@ import '@fontsource/jetbrains-mono/latin-500.css'
 import './styles/global.css'
 import App from './App.tsx'
 import HeroThemeProvider from './theme/HeroThemeProvider.tsx'
+import MultiverseDataProvider from './data/MultiverseDataProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HeroThemeProvider>
-      <App />
+      <MultiverseDataProvider>
+        <App />
+      </MultiverseDataProvider>
     </HeroThemeProvider>
   </StrictMode>,
 )
