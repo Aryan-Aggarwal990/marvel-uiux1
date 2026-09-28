@@ -4,6 +4,7 @@ import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import { heroes, tracks, type HeroId } from '../config/characters'
 import { useHero } from '../theme/heroContext'
+import { useMultiverse } from '../data/multiverseContext'
 import { HeroPortrait } from './art/CharacterArt'
 import { HeroEmblem } from './art/emblems'
 import Magnetic from './ui/Magnetic'
@@ -49,8 +50,18 @@ async function submitToEndpoint(values: Submission): Promise<void> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 
+/** Short, human wording for backend errors shown in the existing failure line. */
+function describeFailure(err: unknown): string {
+  const message = err instanceof Error ? err.message : ''
+  if (/row-level security/i.test(message)) return 'registration limit reached on this device'
+  if (/check constraint|invalid input/i.test(message)) return 'details rejected by the server'
+  if (/timed out|fetch|network|unavailable/i.test(message)) return 'signal lost — check your connection'
+  return message || 'unknown error'
+}
+
 export default function Registration() {
   const { active, select } = useHero()
+  const { saveRegistration } = useMultiverse()
   const root = useRef<HTMLElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [values, setValues] = useState<FormValues>(EMPTY)
@@ -141,15 +152,27 @@ export default function Registration() {
     setStatus('processing')
     // Wait for the processing view to mount, then run animation + request together.
     await new Promise((r) => requestAnimationFrame(r))
+    const badge = `${active ? active.id.slice(0, 4).toUpperCase() : 'GFG'}-616-${Math.floor(1000 + Math.random() * 9000)}`
+    const track = active ? tracks[active.track].role : null
     try {
       await Promise.all([
         runSequence(),
-        submitToEndpoint({ ...values, hero: active?.id ?? null, track: active ? tracks[active.track].role : null }),
+        // Supabase (when configured) — normalised to match the database constraints
+        saveRegistration({
+          name: values.name.trim(),
+          email: values.email.trim().toLowerCase(),
+          phone: values.phone.replace(/[\s-]/g, ''),
+          branch: values.branch,
+          character_id: active?.id ?? null,
+          track,
+          badge_id: badge,
+        }),
+        submitToEndpoint({ ...values, hero: active?.id ?? null, track }),
       ])
-      setHeroId(`${active ? active.id.slice(0, 4).toUpperCase() : 'GFG'}-616-${Math.floor(1000 + Math.random() * 9000)}`)
+      setHeroId(badge)
       setStatus('done')
     } catch (err) {
-      setFailure(`Transmission failed (${err instanceof Error ? err.message : 'unknown error'}). Please try again.`)
+      setFailure(`Transmission failed (${describeFailure(err)}). Please try again.`)
       setStatus('idle')
     }
   }

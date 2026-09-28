@@ -1,11 +1,24 @@
 import { useRef, useState, type MouseEvent } from 'react'
-import { ArrowDown, ArrowRight, Check, RotateCcw } from 'lucide-react'
+import { ArrowDown, ArrowRight, Check, Heart, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion, scrollToTarget } from '../lib/motion'
-import { heroes, tracks, type Hero } from '../config/characters'
+import { heroes, tracks, type Hero, type HeroId } from '../config/characters'
 import { useHero } from '../theme/heroContext'
+import { useMultiverse } from '../data/multiverseContext'
 import { HeroPortrait } from './art/CharacterArt'
 import { HeroEmblem } from './art/emblems'
 import './HeroSelector.css'
+
+/** "You // 3× · World // 128 · ♥ 12" — only the parts we actually know. */
+function statsLine(mine: number, world: { selections: number; favorites: number } | undefined): string | null {
+  const parts: string[] = []
+  if (mine > 0) parts.push(`You // ${mine}×`)
+  if (world)
+    parts.push(
+      `World // ${world.selections.toLocaleString()} ${world.selections === 1 ? 'pick' : 'picks'}`,
+      `♥ ${world.favorites.toLocaleString()}`,
+    )
+  return parts.length ? parts.join(' · ') : null
+}
 
 /** Where the dimension shift should radiate from: the pointer, or the element for keyboard clicks. */
 function originOf(e: MouseEvent<HTMLElement>) {
@@ -17,6 +30,8 @@ function originOf(e: MouseEvent<HTMLElement>) {
 export default function HeroSelector() {
   const root = useRef<HTMLElement>(null)
   const { active, select } = useHero()
+  const { favorites, toggleFavorite, mySelections, worldStats } = useMultiverse()
+  const heroStats = (id: HeroId) => statsLine(mySelections(id), worldStats(id))
   const activeIndex = heroes.findIndex((h) => h.id === active?.id)
   const [focus, setFocus] = useState(Math.max(0, activeIndex))
   // Follow the active hero when it changes elsewhere (nav, hero ring, registration)
@@ -93,6 +108,7 @@ export default function HeroSelector() {
                     <li key={s}>{s}</li>
                   ))}
                 </ul>
+                {heroStats(active.id) && <p className="hs-readout-stats mono">{heroStats(active.id)}</p>}
                 <div className="hs-readout-actions">
                   <button className="btn btn-solid hs-go" onClick={() => scrollToTarget('#register', { duration: 1.6 })}>
                     Register as {active.name} <ArrowRight size={16} />
@@ -135,6 +151,7 @@ export default function HeroSelector() {
                 <div className="hs-top">
                   <span className="hs-num display">{String(i + 1).padStart(2, '0')}</span>
                   <HeroEmblem id={h.id} className="hs-emblem" />
+                  {favorites.has(h.id) && <Heart className="hs-fav-mark" size={13} aria-label="Favourite" />}
                 </div>
                 <span className="hs-vname display" aria-hidden="true">
                   {h.name}
@@ -152,26 +169,42 @@ export default function HeroSelector() {
                   <h3 className="hs-name display">{h.name}</h3>
                   <p className="hs-line">“{h.tagline}”</p>
                   <p className="hs-tags mono">{track.tags}</p>
-                  <button
-                    className="btn hs-select"
-                    onFocus={() => setFocus(i)}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      choose(h, e)
-                    }}
-                    aria-pressed={isActive}
-                    aria-label={isActive ? `${h.name} is your active hero` : `Select ${h.name}`}
-                  >
-                    {isActive ? (
-                      <>
-                        Active hero <Check size={16} />
-                      </>
-                    ) : (
-                      <>
-                        Enter their world <ArrowRight size={16} />
-                      </>
-                    )}
-                  </button>
+                  {heroStats(h.id) && <p className="hs-stats mono">{heroStats(h.id)}</p>}
+                  <div className="hs-actions">
+                    <button
+                      className="btn hs-select"
+                      onFocus={() => setFocus(i)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        choose(h, e)
+                      }}
+                      aria-pressed={isActive}
+                      aria-label={isActive ? `${h.name} is your active hero` : `Select ${h.name}`}
+                    >
+                      {isActive ? (
+                        <>
+                          Active hero <Check size={16} />
+                        </>
+                      ) : (
+                        <>
+                          Enter their world <ArrowRight size={16} />
+                        </>
+                      )}
+                    </button>
+                    <button
+                      className={`hs-fav ${favorites.has(h.id) ? 'is-on' : ''}`}
+                      onFocus={() => setFocus(i)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(h.id)
+                      }}
+                      aria-pressed={favorites.has(h.id)}
+                      aria-label={favorites.has(h.id) ? `Remove ${h.name} from favourites` : `Add ${h.name} to favourites`}
+                      data-cursor={favorites.has(h.id) ? 'Unfave' : 'Fave'}
+                    >
+                      <Heart size={18} />
+                    </button>
+                  </div>
                 </div>
               </li>
             )
