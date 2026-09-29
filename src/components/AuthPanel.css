@@ -252,3 +252,20 @@ html.has-cursor .auth-dialog input {
   color: var(--grey);
   letter-spacing: 0.08em;
 }
+.auth-reg {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+}
+.auth-reg b {
+  color: var(--accent);
+  font-weight: 500;
+}
+.auth-reg-link {
+  align-self: flex-start;
+  font-size: 0.62rem;
+  color: var(--white);
+}

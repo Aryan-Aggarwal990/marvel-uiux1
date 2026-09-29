@@ -2,9 +2,11 @@ import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } fr
 import { ArrowRight, ArrowUpRight, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
-import { heroes, tracks, type HeroId } from '../config/characters'
+import { heroById, heroes, tracks, type Hero, type HeroId } from '../config/characters'
 import { useHero } from '../theme/heroContext'
 import { useMultiverse } from '../data/multiverseContext'
+import { useAuth } from '../auth/authContext'
+import { describeDbError, isDuplicate } from '../data/errors'
 import { HeroPortrait } from './art/CharacterArt'
 import { HeroEmblem } from './art/emblems'
 import Magnetic from './ui/Magnetic'
@@ -50,26 +52,46 @@ async function submitToEndpoint(values: Submission): Promise<void> {
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
 }
 
-/** Short, human wording for backend errors shown in the existing failure line. */
-function describeFailure(err: unknown): string {
-  const message = err instanceof Error ? err.message : ''
-  if (/row-level security/i.test(message)) return 'registration limit reached on this device'
-  if (/check constraint|invalid input/i.test(message)) return 'details rejected by the server'
-  if (/timed out|fetch|network|unavailable/i.test(message)) return 'signal lost — check your connection'
-  return message || 'unknown error'
+/** What the confirmed view shows — from PostgreSQL when logged in, or from the simulated submit. */
+interface Confirmation {
+  name: string
+  email: string
+  badge: string
+  hero: Hero | undefined
+  track: string | null
+  /** true when this account had already registered (UNIQUE (user_id) → 23505) */
+  already: boolean
 }
 
 export default function Registration() {
   const { active, select } = useHero()
-  const { saveRegistration } = useMultiverse()
+  const { saveRegistration, registration: saved } = useMultiverse()
+  const { status: authStatus, user, openPanel } = useAuth()
+  const accountsOn = authStatus !== 'disabled'
   const root = useRef<HTMLElement>(null)
   const panel = useRef<HTMLDivElement>(null)
   const [values, setValues] = useState<FormValues>(EMPTY)
   const [errors, setErrors] = useState<FormErrors>({})
   const [status, setStatus] = useState<Status>('idle')
   const [failure, setFailure] = useState('')
-  const [heroId, setHeroId] = useState('')
+  const [localConfirmation, setLocalConfirmation] = useState<Confirmation | null>(null)
+  const [submittedBy, setSubmittedBy] = useState<string | null>(null)
   const { registration } = eventConfig
+
+  // Logged in with a saved registration → always show it (PostgreSQL is the source of truth).
+  const savedConfirmation: Confirmation | null =
+    accountsOn && user && saved
+      ? {
+          name: saved.name,
+          email: saved.email,
+          badge: saved.badge_id,
+          hero: heroById(saved.character_id),
+          track: saved.track,
+          already: submittedBy !== user.id,
+        }
+      : null
+  const shown = savedConfirmation ?? (status === 'done' ? localConfirmation : null)
+  const view: Status = status === 'processing' ? 'processing' : shown ? 'done' : 'idle'
 
   useGSAP(
     () => {
@@ -96,14 +118,14 @@ export default function Registration() {
   // Success reveal, run whenever the panel switches to the confirmed view
   useGSAP(
     () => {
-      if (status !== 'done' || prefersReducedMotion()) return
+      if (view !== 'done' || prefersReducedMotion()) return
       gsap
         .timeline()
         .fromTo('.reg-flash', { opacity: 0.9 }, { opacity: 0, duration: 1.2, ease: 'power2.out' })
         .from('.reg-done .mask-inner', { yPercent: 110, duration: 1, ease: 'expo.out', stagger: 0.1 }, 0.1)
         .from('.reg-done-fade', { opacity: 0, y: 20, duration: 0.8, stagger: 0.08, ease: 'expo.out' }, 0.4)
     },
-    { scope: panel, dependencies: [status] },
+    { scope: panel, dependencies: [view] },
   )
 
   const set = (key: keyof FormValues) => (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -149,36 +171,55 @@ export default function Registration() {
       gsap.fromTo(root.current?.querySelector('.reg-form') ?? null, { x: -8 }, { x: 0, duration: 0.5, ease: 'elastic.out(1, 0.3)' })
       return
     }
+    // ACCOUNT ≠ EVENT REGISTRATION: an account (Supabase Auth) is needed so the registration
+    // can belong to auth.uid() — UNIQUE (user_id) then allows exactly one per account.
+    if (accountsOn && !user) {
+      if (authStatus === 'loading') setFailure('Checking your account — try again in a second.')
+      else openPanel('login', 'Log in or create an agent account to lock in your registration. Your details stay filled in.')
+      return
+    }
     setStatus('processing')
     // Wait for the processing view to mount, then run animation + request together.
     await new Promise((r) => requestAnimationFrame(r))
     const badge = `${active ? active.id.slice(0, 4).toUpperCase() : 'GFG'}-616-${Math.floor(1000 + Math.random() * 9000)}`
     const track = active ? tracks[active.track].role : null
-    try {
-      await Promise.all([
-        runSequence(),
-        // Supabase (when configured) — normalised to match the database constraints
-        saveRegistration({
-          name: values.name.trim(),
-          email: values.email.trim().toLowerCase(),
-          phone: values.phone.replace(/[\s-]/g, ''),
-          branch: values.branch,
-          character_id: active?.id ?? null,
-          track,
-          badge_id: badge,
-        }),
-        submitToEndpoint({ ...values, hero: active?.id ?? null, track }),
-      ])
-      setHeroId(badge)
-      setStatus('done')
-    } catch (err) {
-      setFailure(`Transmission failed (${describeFailure(err)}). Please try again.`)
-      setStatus('idle')
+    // allSettled: always let the processing animation finish before showing the outcome.
+    const [, saveResult, endpointResult] = await Promise.allSettled([
+      runSequence(),
+      // Supabase (when configured) — normalised to match the database CHECK constraints
+      saveRegistration({
+        name: values.name.trim(),
+        email: values.email.trim().toLowerCase(),
+        phone: values.phone.replace(/[\s-]/g, ''),
+        branch: values.branch,
+        character_id: active?.id ?? null,
+        track,
+        badge_id: badge,
+      }),
+      submitToEndpoint({ ...values, hero: active?.id ?? null, track }),
+    ])
+    const error = saveResult.status === 'rejected' ? saveResult.reason : endpointResult.status === 'rejected' ? endpointResult.reason : null
+
+    if (!error) {
+      if (saveResult.status === 'fulfilled' && saveResult.value === 'saved') {
+        setSubmittedBy(user?.id ?? null) // confirmation now comes from PostgreSQL
+        setStatus('idle')
+      } else {
+        // No backend configured: simulated, exactly as before
+        setLocalConfirmation({ name: values.name, email: values.email, badge, hero: active ?? undefined, track, already: false })
+        setStatus('done')
+      }
+      return
     }
+    setStatus('idle')
+    // 23505 = this account is already registered; the provider has loaded the existing
+    // registration, so the confirmed view appears with an "Already registered" label.
+    if (!isDuplicate(error)) setFailure(`Transmission failed (${describeDbError(error)}). Please try again.`)
   }
 
   const reset = () => {
     setValues(EMPTY)
+    setLocalConfirmation(null)
     setStatus('idle')
   }
 
@@ -233,18 +274,18 @@ export default function Registration() {
             )}
           </aside>
 
-          <div className={`reg-panel is-${status}`} ref={panel}>
+          <div className={`reg-panel is-${view}`} ref={panel}>
             <div className="reg-panel-head mono">
               <span>
-                <span className={`pulse-dot ${status === 'done' ? 'green' : ''}`} /> Entry terminal // {eventConfig.protocol}
+                <span className={`pulse-dot ${view === 'done' ? 'green' : ''}`} /> Entry terminal // {eventConfig.protocol}
               </span>
-              <span className="muted">{status === 'idle' ? 'Awaiting input' : status === 'processing' ? 'Processing' : 'Confirmed'}</span>
+              <span className="muted">{view === 'idle' ? 'Awaiting input' : view === 'processing' ? 'Processing' : 'Confirmed'}</span>
             </div>
             <div className="corners" aria-hidden="true">
               <i />
             </div>
 
-            {status === 'idle' && (
+            {view === 'idle' && (
               <form className="reg-form" onSubmit={onSubmit} noValidate>
                 <Field label="Name" index="01" error={errors.name}>
                   <input name="name" autoComplete="name" placeholder="Peter Parker" value={values.name} onChange={set('name')} />
@@ -323,10 +364,26 @@ export default function Registration() {
                     Initiate entry <ArrowRight size={18} />
                   </button>
                 </Magnetic>
+                {accountsOn && (
+                  <p className="reg-auth-hint mono">
+                    {user ? (
+                      <>
+                        <span className="pulse-dot green" /> Registering as agent // {user.email}
+                      </>
+                    ) : (
+                      <>
+                        {'// '}Requires an agent account —{' '}
+                        <button type="button" className="u-link" onClick={() => openPanel('login')}>
+                          log in or sign up
+                        </button>
+                      </>
+                    )}
+                  </p>
+                )}
               </form>
             )}
 
-            {status === 'processing' && (
+            {view === 'processing' && (
               <div className="reg-proc" aria-live="assertive">
                 <p className="reg-proc-title display">Access requested</p>
                 <p className="reg-progress mono">
@@ -343,16 +400,16 @@ export default function Registration() {
               </div>
             )}
 
-            {status === 'done' && (
+            {view === 'done' && shown && (
               <div className="reg-done" aria-live="assertive">
                 <div className="reg-flash" aria-hidden="true" />
-                {active && (
+                {shown.hero && (
                   <div className="reg-done-art" aria-hidden="true">
-                    <HeroPortrait hero={active} />
+                    <HeroPortrait hero={shown.hero} />
                   </div>
                 )}
                 <p className="mono reg-done-fade reg-done-kicker">
-                  <span className="pulse-dot green" /> Access // Granted
+                  <span className="pulse-dot green" /> {shown.already ? 'Already registered // this account' : 'Access // Granted'}
                 </p>
                 <h3 className="display reg-done-title">
                   <span className="mask">
@@ -363,34 +420,38 @@ export default function Registration() {
                   </span>
                 </h3>
                 <p className="mono reg-done-fade reg-done-sub">
-                  Registration confirmed.{active && <span className="accent"> {active.welcome}</span>}
+                  Registration confirmed.{shown.hero && <span className="accent"> {shown.hero.welcome}</span>}
                 </p>
 
                 <div className="reg-card reg-done-fade">
                   <div>
                     <span className="mono muted">Hero ID</span>
-                    <b>{heroId}</b>
+                    <b>{shown.badge}</b>
                   </div>
                   <div>
                     <span className="mono muted">Agent</span>
-                    <b>{values.name}</b>
+                    <b>{shown.name}</b>
                   </div>
                   <div>
                     <span className="mono muted">Hero</span>
-                    <b>{active ? active.name : 'Unassigned'}</b>
+                    <b>{shown.hero ? shown.hero.name : 'Unassigned'}</b>
                   </div>
                   <div>
                     <span className="mono muted">Track</span>
-                    <b>{active ? tracks[active.track].role : 'Any'}</b>
+                    <b>{shown.track ?? 'Any'}</b>
                   </div>
                 </div>
 
                 <p className="reg-done-fade reg-done-note">
-                  Your mission brief will be transmitted to <b>{values.email}</b>. See you in the multiverse.
+                  Your mission brief will be transmitted to <b>{shown.email}</b>. See you in the multiverse.
                 </p>
-                <button className="u-link mono reg-done-fade reg-again" onClick={reset}>
-                  <RotateCcw size={13} /> Register another hero
-                </button>
+                {savedConfirmation ? (
+                  <p className="mono reg-done-fade reg-done-once">One registration per account — saved to your agent profile.</p>
+                ) : (
+                  <button className="u-link mono reg-done-fade reg-again" onClick={reset}>
+                    <RotateCcw size={13} /> Register another hero
+                  </button>
+                )}
               </div>
             )}
           </div>

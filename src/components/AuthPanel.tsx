@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, Eye, EyeOff, LogOut, X } from 'lucide-react'
 import { useAuth } from '../auth/authContext'
 import { validateCredentials, type CredentialErrors } from '../auth/validation'
-import { lockScroll } from '../lib/motion'
+import { lockScroll, scrollToTarget } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import { heroes } from '../config/characters'
 import { useMultiverse } from '../data/multiverseContext'
@@ -17,7 +17,7 @@ import './AuthPanel.css'
  */
 export default function AuthPanel() {
   const { status, user, panel, openPanel, closePanel, logIn, signUp, logOut } = useAuth()
-  const { status: dataStatus, favorites } = useMultiverse()
+  const { status: dataStatus, favorites, registration } = useMultiverse()
   const { select } = useHero()
   const dialog = useRef<HTMLDialogElement>(null)
   const [email, setEmail] = useState('')
@@ -134,6 +134,28 @@ export default function AuthPanel() {
                 </ul>
               ) : (
                 <p className="auth-empty mono">No favourites yet — tap ♥ on a hero in the lineup.</p>
+              )}
+            </div>
+            <div className="auth-saved">
+              <p className="auth-label mono">
+                <span className="accent">//</span> Event registration
+              </p>
+              {registration ? (
+                <p className="auth-reg mono">
+                  <span className="pulse-dot green" /> Confirmed · <b>{registration.badge_id}</b> · {registration.name}
+                </p>
+              ) : registration === null ? (
+                <button
+                  className="u-link mono auth-reg-link"
+                  onClick={() => {
+                    closePanel()
+                    requestAnimationFrame(() => scrollToTarget('#register'))
+                  }}
+                >
+                  Not registered yet — go to the form →
+                </button>
+              ) : (
+                <p className="auth-empty mono">{dataStatus === 'offline' ? 'Unavailable offline.' : 'Loading…'}</p>
               )}
             </div>
             <button className="btn auth-submit" onClick={() => void logOut()}>
