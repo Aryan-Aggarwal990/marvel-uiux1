@@ -1,10 +1,11 @@
 import { useEffect, useState, type MouseEvent } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, UserRound, X } from 'lucide-react'
 import { scrollToTarget, lockScroll, ScrollTrigger } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import ScrambleText from './ui/ScrambleText'
 import { useHero } from '../theme/heroContext'
 import { HeroEmblem } from './art/emblems'
+import { useAuth } from '../auth/authContext'
 import './Navbar.css'
 
 const LINKS = [
@@ -19,6 +20,7 @@ export default function Navbar({ visible }: { visible: boolean }) {
   const [scrolled, setScrolled] = useState(() => window.scrollY > 40)
   const [open, setOpen] = useState(false)
   const { active: hero } = useHero()
+  const { status: authStatus, user, openPanel } = useAuth()
   const [active, setActive] = useState('')
 
   useEffect(() => {
@@ -100,6 +102,18 @@ export default function Navbar({ visible }: { visible: boolean }) {
             <span className="pulse-dot green" />
             System online
           </div>
+        )}
+
+        {/* Account chip — hidden when no backend is configured or while the session loads */}
+        {(authStatus === 'signed-in' || authStatus === 'signed-out') && (
+          <button
+            className={`nav-auth mono ${user ? 'is-in' : ''}`}
+            onClick={() => openPanel(user ? 'account' : 'login')}
+            aria-label={user ? `Account: ${user.email}` : 'Log in or sign up'}
+          >
+            {user ? <span className="pulse-dot green" /> : <UserRound size={14} />}
+            <span className="nav-auth-text">{user ? `Agent // ${user.email.split('@')[0]}` : 'Log in'}</span>
+          </button>
         )}
 
         <button

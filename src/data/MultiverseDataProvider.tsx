@@ -3,9 +3,9 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { HeroId } from '../config/characters'
 import { backendConfigured, devWarn, getSupabase, withTimeout } from '../lib/supabase'
 import { useHero } from '../theme/heroContext'
+import { useAuth } from '../auth/authContext'
 import {
   addFavorite,
-  ensureSession,
   fetchFavorites,
   fetchStats,
   insertRegistration,
@@ -25,6 +25,8 @@ import { MultiverseContext, type BackendStatus, type MultiverseData } from './mu
  */
 export default function MultiverseDataProvider({ children }: { children: ReactNode }) {
   const { active } = useHero()
+  const { user } = useAuth()
+  const userId = user?.id ?? null
   const [status, setStatus] = useState<BackendStatus>(backendConfigured ? 'connecting' : 'disabled')
   const [favorites, setFavorites] = useState<Set<HeroId>>(loadFavorites)
   const [localCounts, setLocalCounts] = useState(loadSelectionCounts)
@@ -53,15 +55,15 @@ export default function MultiverseDataProvider({ children }: { children: ReactNo
     [refreshStats],
   )
 
-  // Connect once: anonymous session → reconcile favourites → load stats.
+  // Connect when a user is logged in (Supabase Auth session) → reconcile favourites → load stats.
   useEffect(() => {
     if (!backendConfigured) return
     let cancelled = false
-    connection.current ??= (async () => {
+    connection.current = (async () => {
       try {
+        if (!userId) throw new Error('not logged in')
         const sb = await getSupabase()
         if (!sb) throw new Error('Supabase client unavailable')
-        await withTimeout(ensureSession(sb))
         const remote = await withTimeout(fetchFavorites(sb))
         const local = favoritesRef.current
         if (local.size === 0 && remote.length > 0) {
@@ -93,7 +95,7 @@ export default function MultiverseDataProvider({ children }: { children: ReactNo
     return () => {
       cancelled = true
     }
-  }, [refreshStats])
+  }, [refreshStats, userId])
 
   // Record hero selections. The hero restored on page load is not an interaction.
   const lastHero = useRef<HeroId | null>(active?.id ?? null)

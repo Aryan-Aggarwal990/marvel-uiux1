@@ -10,13 +10,16 @@ import './styles/global.css'
 import App from './App.tsx'
 import HeroThemeProvider from './theme/HeroThemeProvider.tsx'
 import MultiverseDataProvider from './data/MultiverseDataProvider.tsx'
+import AuthProvider from './auth/AuthProvider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <HeroThemeProvider>
-      <MultiverseDataProvider>
-        <App />
-      </MultiverseDataProvider>
+      <AuthProvider>
+        <MultiverseDataProvider>
+          <App />
+        </MultiverseDataProvider>
+      </AuthProvider>
     </HeroThemeProvider>
   </StrictMode>,
 )

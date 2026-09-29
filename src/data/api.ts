@@ -9,7 +9,7 @@ export interface HeroStats {
   selections: number
   /** Users who favourited this hero */
   favorites: number
-  /** Selections by this browser's anonymous user */
+  /** Selections by the logged-in user (0 when logged out) */
   mine: number
 }
 
@@ -28,25 +28,6 @@ export const isHeroId = (value: unknown): value is HeroId => typeof value === 's
 
 function check(error: { message: string } | null): void {
   if (error) throw new Error(error.message)
-}
-
-let session: Promise<string> | null = null
-
-/** Reuses the stored session or silently signs in anonymously. Returns the anonymous user id. */
-export function ensureSession(sb: SupabaseClient): Promise<string> {
-  session ??= (async () => {
-    const { data, error } = await sb.auth.getSession()
-    check(error)
-    if (data.session) return data.session.user.id
-    const signIn = await sb.auth.signInAnonymously()
-    check(signIn.error)
-    if (!signIn.data.user) throw new Error('anonymous sign-in returned no user')
-    return signIn.data.user.id
-  })().catch((err: unknown) => {
-    session = null // allow a later retry
-    throw err
-  })
-  return session
 }
 
 export async function fetchFavorites(sb: SupabaseClient): Promise<HeroId[]> {
@@ -93,6 +74,6 @@ export async function fetchStats(sb: SupabaseClient): Promise<Partial<Record<Her
 
 export async function insertRegistration(sb: SupabaseClient, row: RegistrationRow): Promise<void> {
   // No .select() afterwards: the insert alone is enough and needs no read-back.
-  const { error } = await sb.from('registrations').insert(row)
+  const { error } = await sb.from('event_registrations').insert(row)
   check(error)
 }
