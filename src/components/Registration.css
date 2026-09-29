@@ -394,3 +394,27 @@
   width: 100%;
   height: auto;
 }
+
+/* Account hint under the submit button + one-per-account note */
+.reg-auth-hint {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: -0.9rem;
+  font-size: 0.58rem;
+  color: var(--grey);
+  letter-spacing: 0.1em;
+}
+.reg-auth-hint .u-link {
+  color: var(--white);
+  letter-spacing: inherit;
+  text-transform: inherit;
+  font-size: inherit;
+}
+.reg-done-once {
+  font-size: 0.58rem;
+  color: var(--grey);
+  letter-spacing: 0.1em;
+}

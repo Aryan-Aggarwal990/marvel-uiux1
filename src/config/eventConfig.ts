@@ -47,9 +47,9 @@ export const eventConfig: EventConfig = {
   protocol: 'GFG-01',
 
   // ── When & where ──────────────────────────────────────────
-  date: '[EVENT DATE]',
-  time: '[EVENT TIME]',
-  venue: '[EVENT VENUE]',
+  date: '28 September',
+  time: '4:00 AM',
+  venue: 'NLH101',
 
   coordinates: {
     lat: '28°27′ N',

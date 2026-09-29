@@ -264,3 +264,52 @@
     display: none;
   }
 }
+
+/* Account chip (Supabase Auth) */
+.nav-auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+  max-width: 220px;
+  padding: 0 0.8rem;
+  margin-left: 0.6rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--hud-radius);
+  clip-path: var(--hud-clip);
+  font-size: 0.62rem;
+  color: rgba(245, 245, 245, 0.8);
+  white-space: nowrap;
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    background-color 0.3s;
+}
+.nav-auth:hover {
+  color: var(--white);
+  border-color: var(--accent);
+}
+.nav-auth.is-in {
+  border-color: color-mix(in srgb, #3cff8f 35%, var(--line-strong));
+}
+.nav-auth-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 1180px) {
+  .nav-auth.is-in .nav-auth-text {
+    max-width: 110px;
+  }
+}
+@media (max-width: 900px) {
+  .nav-auth {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    justify-content: center;
+    margin-left: 0.75rem;
+  }
+  .nav-auth-text {
+    display: none;
+  }
+}

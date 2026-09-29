@@ -1,0 +1,41 @@
+.notice {
+  position: fixed;
+  left: var(--gutter);
+  bottom: 1.25rem;
+  z-index: 110;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  max-width: min(460px, calc(100vw - 2 * var(--gutter)));
+  padding: 0.75rem 0.8rem 0.75rem 1rem;
+  font-size: 0.6rem;
+  line-height: 1.5;
+  letter-spacing: 0.08em;
+  color: var(--white);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--line));
+  border-radius: min(var(--hud-radius), 14px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: notice-in 0.5s var(--ease) both;
+}
+.notice.is-info {
+  border-color: color-mix(in srgb, #3cff8f 40%, var(--line));
+}
+.notice button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: var(--grey);
+}
+.notice button:hover {
+  color: var(--white);
+}
+@keyframes notice-in {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}

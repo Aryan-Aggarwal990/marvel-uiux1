@@ -17,6 +17,8 @@ import Timeline from './components/Timeline'
 import Location from './components/Location'
 import Registration from './components/Registration'
 import Footer from './components/Footer'
+import AuthPanel from './components/AuthPanel'
+import Notice from './components/Notice'
 
 const TICKER = ['The multiverse is open', ...heroes.map((h) => h.name), 'Choose your hero']
 const HUD_TICKER = [
@@ -59,6 +61,8 @@ export default function App() {
       <WorldBackdrop />
       <div className="grain" aria-hidden="true" />
       <Navbar visible={revealed} />
+      <AuthPanel />
+      <Notice />
 
       <main>
         <Hero ready={revealed} />
