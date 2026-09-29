@@ -56,6 +56,8 @@ src/
   config/eventConfig.ts     ← event content
   config/characters.ts      ← hero roster + per-hero world themes
   theme/                    hero context, provider, dimension shift, world backdrop, motifs, particles
+  auth/                     Supabase Auth: provider, context, validation
+  data/                     Supabase data layer: api, errors, provider, local fallback
   lib/motion.ts             GSAP + ScrollTrigger + useGSAP + Lenis, scroll helpers
   hooks/useScramble.ts      text-decode effect
   components/
@@ -67,16 +69,27 @@ src/
 public/assets/characters/   drop licensed hero artwork here (see its README)
 ```
 
-## Optional backend (Supabase)
+## Backend (Supabase): accounts, favourites, registrations
 
-Favourites, hero-world persistence, anonymous interaction stats and saved registrations are powered by
-Supabase **when configured**. Without the two env vars below the site runs exactly as before.
+The site is a full-stack app when Supabase is configured:
+
+- **Accounts**: sign up / log in / log out with email + password (Supabase Auth; passwords are
+  hashed by Supabase and never stored by this project). Sessions survive refreshes.
+- **Favourites**: ♥ heroes, saved per account in PostgreSQL (one per hero, enforced by the database).
+- **Interaction history**: every hero selection is logged; worldwide + personal counts are shown.
+- **Hero world**: your current hero is saved and restored when you log in on another device.
+- **Event registration**: the existing form saves to PostgreSQL, one registration per account.
+- **Row Level Security**: every user can only access their own rows.
+
+Without the env vars below the site runs exactly as before (no backend needed).
 
 ```bash
 cp .env.example .env.local   # fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 ```
 
-Full setup (schema SQL, anonymous sign-ins, Vercel env vars, testing, security): **[docs/BACKEND.md](docs/BACKEND.md)**.
+- **Setup, schema, RLS, error handling, deployment:** [docs/BACKEND.md](docs/BACKEND.md)
+- **Database migration:** [supabase/migrations/0001_multiverse.sql](supabase/migrations/0001_multiverse.sql)
+- **Interview notes:** [docs/INTERVIEW_PREP.md](docs/INTERVIEW_PREP.md)
 
 ## Deploy (Vercel)
 
