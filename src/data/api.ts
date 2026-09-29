@@ -1,6 +1,13 @@
-/** Thin, typed wrappers around the Supabase tables (see supabase/migrations/0001_multiverse.sql). */
-import type { SupabaseClient } from '@supabase/supabase-js'
+/**
+ * Database access layer: one small function per Supabase call.
+ * See supabase/migrations/0001_multiverse.sql for the tables and RLS policies.
+ *
+ * None of these functions pass a user_id: the database fills it from auth.uid()
+ * (the logged-in user's JWT) and RLS rejects rows that belong to someone else.
+ */
+import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js'
 import { heroes, type HeroId } from '../config/characters'
+import { DbError } from './errors'
 
 export type InteractionType = 'select' | 'favorite' | 'unfavorite'
 
@@ -13,6 +20,7 @@ export interface HeroStats {
   mine: number
 }
 
+/** Event registration details (NOT the login account — no password here). */
 export interface RegistrationRow {
   name: string
   email: string
@@ -23,40 +31,58 @@ export interface RegistrationRow {
   badge_id: string
 }
 
-const HERO_IDS = new Set<string>(heroes.map((h) => h.id))
-export const isHeroId = (value: unknown): value is HeroId => typeof value === 'string' && HERO_IDS.has(value)
-
-function check(error: { message: string } | null): void {
-  if (error) throw new Error(error.message)
+export interface SavedRegistration extends RegistrationRow {
+  created_at: string
 }
 
+const HERO_IDS = new Set<string>(heroes.map((h) => h.id))
+/** Only accept hero ids that exist in src/config/characters.ts. */
+export const isHeroId = (value: unknown): value is HeroId => typeof value === 'string' && HERO_IDS.has(value)
+
+/** Throws a DbError (keeping the PostgreSQL error code) if the request failed. */
+function check(error: PostgrestError | null): void {
+  if (error) throw new DbError(error.message, error.code)
+}
+
+// ── Favourites ────────────────────────────────────────────────────────────────
 export async function fetchFavorites(sb: SupabaseClient): Promise<HeroId[]> {
-  const { data, error } = await sb.from('favorites').select('character_id')
+  const { data, error } = await sb.from('favorites').select('character_id').order('created_at')
   check(error)
   return (data ?? []).map((row: { character_id: unknown }) => row.character_id).filter(isHeroId)
 }
 
-export async function addFavorite(sb: SupabaseClient, id: HeroId): Promise<void> {
-  // ignoreDuplicates: favouriting twice is a no-op rather than an error
-  const { error } = await sb.from('favorites').upsert({ character_id: id }, { onConflict: 'user_id,character_id', ignoreDuplicates: true })
+/** Plain insert: favouriting twice makes PostgreSQL raise 23505 (primary key). */
+export async function insertFavorite(sb: SupabaseClient, id: HeroId): Promise<void> {
+  const { error } = await sb.from('favorites').insert({ character_id: id })
   check(error)
 }
 
-export async function removeFavorite(sb: SupabaseClient, id: HeroId): Promise<void> {
+export async function deleteFavorite(sb: SupabaseClient, id: HeroId): Promise<void> {
+  // RLS limits the delete to the caller's own rows, so no user_id filter is needed.
   const { error } = await sb.from('favorites').delete().eq('character_id', id)
   check(error)
 }
 
+// ── Interactions (append-only history) ────────────────────────────────────────
 export async function logInteraction(sb: SupabaseClient, id: HeroId, type: InteractionType): Promise<void> {
   const { error } = await sb.from('interactions').insert({ character_id: id, interaction_type: type })
   check(error)
 }
 
-export async function saveActiveHero(sb: SupabaseClient, id: HeroId | null): Promise<void> {
+// ── User state (current hero world) ───────────────────────────────────────────
+export async function fetchUserState(sb: SupabaseClient): Promise<HeroId | null> {
+  const { data, error } = await sb.from('user_state').select('active_character_id').maybeSingle()
+  check(error)
+  return isHeroId(data?.active_character_id) ? data.active_character_id : null
+}
+
+export async function saveUserState(sb: SupabaseClient, id: HeroId | null): Promise<void> {
+  // upsert = insert the row the first time, update it afterwards (one row per user).
   const { error } = await sb.from('user_state').upsert({ active_character_id: id }, { onConflict: 'user_id' })
   check(error)
 }
 
+// ── Aggregate statistics (counts only; works logged in or out) ────────────────
 export async function fetchStats(sb: SupabaseClient): Promise<Partial<Record<HeroId, HeroStats>>> {
   const { data, error } = await sb.rpc('character_stats')
   check(error)
@@ -72,8 +98,18 @@ export async function fetchStats(sb: SupabaseClient): Promise<Partial<Record<Her
   return stats
 }
 
+// ── Event registration (one per account: UNIQUE (user_id)) ────────────────────
+export async function fetchMyRegistration(sb: SupabaseClient): Promise<SavedRegistration | null> {
+  const { data, error } = await sb
+    .from('event_registrations')
+    .select('name, email, phone, branch, character_id, track, badge_id, created_at')
+    .maybeSingle()
+  check(error)
+  return data ? { ...data, character_id: isHeroId(data.character_id) ? data.character_id : null } : null
+}
+
+/** A second registration by the same account makes PostgreSQL raise 23505. */
 export async function insertRegistration(sb: SupabaseClient, row: RegistrationRow): Promise<void> {
-  // No .select() afterwards: the insert alone is enough and needs no read-back.
   const { error } = await sb.from('event_registrations').insert(row)
   check(error)
 }

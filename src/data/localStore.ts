@@ -1,6 +1,7 @@
 /**
- * Local fallback persistence. Favourites and personal selection counts always live here too,
- * so they survive refreshes even when Supabase is not configured or unreachable.
+ * Guest (logged-out) persistence in localStorage.
+ * When a user logs in, PostgreSQL becomes the source of truth and guest favourites are
+ * merged into their account. Also used when no backend is configured at all.
  */
 import type { HeroId } from '../config/characters'
 import { isHeroId } from './api'

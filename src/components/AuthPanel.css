@@ -210,3 +210,45 @@ html.has-cursor .auth-dialog input {
   overflow-wrap: anywhere;
   letter-spacing: 0.08em;
 }
+.auth-saved {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+.auth-favs {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.auth-favs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--c1) 55%, transparent);
+  border-radius: var(--hud-radius);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+.auth-favs button:hover {
+  background: var(--c1);
+  color: #050505;
+}
+.auth-fav-emblem {
+  width: 16px;
+  height: 16px;
+  color: var(--c1);
+}
+.auth-favs button:hover .auth-fav-emblem {
+  color: #050505;
+}
+.auth-empty {
+  font-size: 0.58rem;
+  color: var(--grey);
+  letter-spacing: 0.08em;
+}

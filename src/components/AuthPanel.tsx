@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ArrowRight, Eye, EyeOff, LogOut, X } from 'lucide-react'
 import { useAuth } from '../auth/authContext'
 import { validateCredentials, type CredentialErrors } from '../auth/validation'
 import { lockScroll } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
+import { heroes } from '../config/characters'
+import { useMultiverse } from '../data/multiverseContext'
+import { useHero } from '../theme/heroContext'
+import { HeroEmblem } from './art/emblems'
 import './AuthPanel.css'
 
 /**
@@ -11,8 +15,10 @@ import './AuthPanel.css'
  * ACCOUNT (email + password → Supabase Auth) is deliberately separate from the
  * EVENT REGISTRATION form further down the page (details → PostgreSQL).
  */
-export default function AuthPanel({ accountExtras }: { accountExtras?: ReactNode }) {
+export default function AuthPanel() {
   const { status, user, panel, openPanel, closePanel, logIn, signUp, logOut } = useAuth()
+  const { status: dataStatus, favorites } = useMultiverse()
+  const { select } = useHero()
   const dialog = useRef<HTMLDialogElement>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -101,7 +107,35 @@ export default function AuthPanel({ accountExtras }: { accountExtras?: ReactNode
               Agent <span className="accent">online</span>
             </h2>
             <p className="auth-email mono">{user.email}</p>
-            {accountExtras}
+            <div className="auth-saved">
+              <p className="auth-label mono">
+                <span className="accent">//</span> Saved favourites{' '}
+                {dataStatus === 'syncing' ? '— syncing…' : dataStatus === 'offline' ? '— offline (on this device)' : `(${favorites.size})`}
+              </p>
+              {favorites.size ? (
+                <ul className="auth-favs">
+                  {heroes
+                    .filter((h) => favorites.has(h.id))
+                    .map((h) => (
+                      <li key={h.id}>
+                        <button
+                          style={{ '--c1': h.theme.accent }}
+                          onClick={(e) => {
+                            closePanel()
+                            select(h.id, { x: e.clientX || window.innerWidth / 2, y: e.clientY || window.innerHeight / 2 })
+                          }}
+                          aria-label={`Enter ${h.name}'s world`}
+                        >
+                          <HeroEmblem id={h.id} className="auth-fav-emblem" />
+                          {h.name}
+                        </button>
+                      </li>
+                    ))}
+                </ul>
+              ) : (
+                <p className="auth-empty mono">No favourites yet — tap ♥ on a hero in the lineup.</p>
+              )}
+            </div>
             <button className="btn auth-submit" onClick={() => void logOut()}>
               Log out <LogOut size={16} />
             </button>
