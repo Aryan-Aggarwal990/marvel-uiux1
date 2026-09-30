@@ -1,4 +1,5 @@
 import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from 'react'
+import { supabase } from '../lib/supabase'
 import { ArrowRight, ArrowUpRight, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
@@ -39,14 +40,24 @@ interface Submission extends FormValues {
 }
 
 async function submitToEndpoint(values: Submission): Promise<void> {
-  const { endpoint } = eventConfig.registration
-  if (!endpoint) return
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(values),
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !authData.user) {
+    throw new Error('Please log in before registering.')
+  }
+
+  const { error } = await supabase
+    .from('event_registrations')
+    .insert({
+      user_id: authData.user.id,
+      name: values.name.trim(),
+      email: values.email.trim(),
+      character: values.hero,
+    })
+
+  if (error) {
+    throw new Error(error.message)
+  }
 }
 
 export default function Registration() {

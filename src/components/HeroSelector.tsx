@@ -1,11 +1,12 @@
-import { useRef, useState, type MouseEvent } from 'react'
-import { ArrowDown, ArrowRight, Check, RotateCcw } from 'lucide-react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { ArrowDown, ArrowRight, Check, Heart, RotateCcw } from 'lucide-react'
 import { gsap, useGSAP, prefersReducedMotion, scrollToTarget } from '../lib/motion'
 import { heroes, tracks, type Hero } from '../config/characters'
 import { useHero } from '../theme/heroContext'
 import { HeroPortrait } from './art/CharacterArt'
 import { HeroEmblem } from './art/emblems'
 import './HeroSelector.css'
+import { supabase } from '../lib/supabase'
 
 /** Where the dimension shift should radiate from: the pointer, or the element for keyboard clicks. */
 function originOf(e: MouseEvent<HTMLElement>) {
@@ -19,8 +20,27 @@ export default function HeroSelector() {
   const { active, select } = useHero()
   const activeIndex = heroes.findIndex((h) => h.id === active?.id)
   const [focus, setFocus] = useState(Math.max(0, activeIndex))
+  const [favorites, setFavorites] = useState<string[]>([])
   // Follow the active hero when it changes elsewhere (nav, hero ring, registration)
   const [lastActive, setLastActive] = useState(activeIndex)
+  useEffect(() => {
+  const loadFavorites = async () => {
+    const { data: authData } = await supabase.auth.getUser()
+
+    if (!authData.user) return
+
+    const { data, error } = await supabase
+      .from('favorites')
+      .select('character_id')
+      .eq('user_id', authData.user.id)
+
+    if (!error) {
+      setFavorites(data.map((item) => item.character_id))
+    }
+  }
+
+  loadFavorites()
+}, [])
   if (lastActive !== activeIndex) {
     setLastActive(activeIndex)
     if (activeIndex >= 0) setFocus(activeIndex)
@@ -50,6 +70,53 @@ export default function HeroSelector() {
   )
 
   const choose = (hero: Hero, e: MouseEvent<HTMLElement>) => select(hero.id, originOf(e))
+  const toggleFavorite = async (
+  heroId: string,
+  e: MouseEvent<HTMLButtonElement>,
+) => {
+  e.stopPropagation()
+
+  const { data: authData, error: authError } =
+    await supabase.auth.getUser()
+
+  if (authError || !authData.user) {
+    console.error('No logged-in user:', authError)
+    return
+  }
+
+  const isFavorite = favorites.includes(heroId)
+
+  if (isFavorite) {
+    const { error } = await supabase
+      .from('favorites')
+      .delete()
+      .eq('user_id', authData.user.id)
+      .eq('character_id', heroId)
+
+    if (error) {
+      console.error('Failed to remove favorite:', error)
+      return
+    }
+
+    setFavorites((current) =>
+      current.filter((id) => id !== heroId),
+    )
+  } else {
+    const { error } = await supabase
+      .from('favorites')
+      .insert({
+        user_id: authData.user.id,
+        character_id: heroId,
+      })
+
+    if (error) {
+      console.error('Failed to add favorite:', error)
+      return
+    }
+
+    setFavorites((current) => [...current, heroId])
+  }
+}
 
   return (
     <section className="hs section" id="heroes" ref={root}>
@@ -134,7 +201,19 @@ export default function HeroSelector() {
 
                 <div className="hs-top">
                   <span className="hs-num display">{String(i + 1).padStart(2, '0')}</span>
-                  <HeroEmblem id={h.id} className="hs-emblem" />
+
+                  <div className="hs-top-actions">
+                    <button
+                      className={`hs-favorite ${favorites.includes(h.id) ? 'is-favorite' : ''}`}
+                      onClick={(e) => toggleFavorite(h.id, e)}
+                      aria-label={favorites.includes(h.id) ? `Remove ${h.name} from favorites` : `Add ${h.name} to favorites`}
+                      aria-pressed={favorites.includes(h.id)}
+                    >
+                      <Heart size={16} fill={favorites.includes(h.id) ? 'currentColor' : 'none'} />
+                    </button>
+
+                    <HeroEmblem id={h.id} className="hs-emblem" />
+                 </div>
                 </div>
                 <span className="hs-vname display" aria-hidden="true">
                   {h.name}

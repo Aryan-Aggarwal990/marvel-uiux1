@@ -1,10 +1,11 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useState, type FormEvent, type MouseEvent } from 'react'
 import { Menu, X } from 'lucide-react'
 import { scrollToTarget, lockScroll, ScrollTrigger } from '../lib/motion'
 import { eventConfig } from '../config/eventConfig'
 import ScrambleText from './ui/ScrambleText'
 import { useHero } from '../theme/heroContext'
 import { HeroEmblem } from './art/emblems'
+import { supabase } from '../lib/supabase'
 import './Navbar.css'
 
 const LINKS = [
@@ -20,12 +21,74 @@ export default function Navbar({ visible }: { visible: boolean }) {
   const [open, setOpen] = useState(false)
   const { active: hero } = useHero()
   const [active, setActive] = useState('')
+  const [user, setUser] = useState<any>(null)
+  const [authOpen, setAuthOpen] = useState(false)
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authMessage, setAuthMessage] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+  useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    setUser(data.session?.user ?? null)
+  })
+
+  const { data: listener } = supabase.auth.onAuthStateChange(
+    (_event, session) => {
+      setUser(session?.user ?? null)
+    },
+  )
+
+  return () => listener.subscription.unsubscribe()
+}, [])
+
+const handleLogout = async () => {
+  await supabase.auth.signOut()
+}
+const handleAuth = async (e: FormEvent) => {
+  e.preventDefault()
+
+  setAuthLoading(true)
+  setAuthMessage('')
+
+  if (authMode === 'login') {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: authEmail.trim(),
+      password: authPassword,
+    })
+
+    if (error) {
+      setAuthMessage(error.message)
+    } else {
+      setAuthOpen(false)
+      setAuthPassword('')
+    }
+  } else {
+    const { data, error } = await supabase.auth.signUp({
+      email: authEmail.trim(),
+      password: authPassword,
+    })
+
+    if (error) {
+      setAuthMessage(error.message)
+    } else if (data.session) {
+      setAuthOpen(false)
+      setAuthPassword('')
+    } else {
+      setAuthMessage(
+        'Account created. Check your email to confirm your account.',
+      )
+    }
+  }
+
+  setAuthLoading(false)
+}
 
   // Highlight the section currently crossing the middle of the viewport
   useEffect(() => {
@@ -84,6 +147,21 @@ export default function Navbar({ visible }: { visible: boolean }) {
           ))}
         </nav>
 
+                <button
+                  className="nav-auth mono"
+                  onClick={() => {
+                    if (user) {
+                      handleLogout()
+                    } else {
+                      setAuthMode('login')
+                      setAuthMessage('')
+                     setAuthOpen(true)
+                    }
+                  }}
+                >            
+                  {user ? 'LOGOUT' : 'LOGIN'}
+                </button>
+
         {hero ? (
           <a
             href="#heroes"
@@ -112,6 +190,99 @@ export default function Navbar({ visible }: { visible: boolean }) {
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
+      {authOpen && (
+  <div
+    className="auth-overlay"
+    onClick={() => setAuthOpen(false)}
+  >
+    <div
+      className="auth-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-label={authMode === 'login' ? 'Login' : 'Create account'}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <button
+        className="auth-close"
+        onClick={() => setAuthOpen(false)}
+        aria-label="Close authentication"
+      >
+        <X size={18} />
+      </button>
+
+      <div className="auth-kicker mono">
+        GFG × MARVEL // AUTHENTICATION
+      </div>
+
+      <h2>{authMode === 'login' ? 'Welcome back.' : 'Join the multiverse.'}</h2>
+
+      <p className="auth-subtitle">
+        {authMode === 'login'
+          ? 'Authenticate to access your multiverse profile.'
+          : 'Create an account to save heroes and register for the event.'}
+      </p>
+
+      <form onSubmit={handleAuth}>
+        <label className="auth-label mono">
+          EMAIL
+        </label>
+
+        <input
+          className="auth-input"
+          type="email"
+          value={authEmail}
+          onChange={(e) => setAuthEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+        />
+
+        <label className="auth-label mono">
+          PASSWORD
+        </label>
+
+        <input
+          className="auth-input"
+          type="password"
+          value={authPassword}
+          onChange={(e) => setAuthPassword(e.target.value)}
+          placeholder="••••••••"
+          minLength={6}
+          required
+        />
+
+        {authMessage && (
+          <p className="auth-message">
+            {authMessage}
+          </p>
+        )}
+
+        <button
+          className="auth-submit mono"
+          type="submit"
+          disabled={authLoading}
+        >
+          {authLoading
+            ? 'PROCESSING...'
+            : authMode === 'login'
+              ? 'LOGIN // ENTER'
+              : 'CREATE ACCOUNT'}
+        </button>
+      </form>
+
+      <button
+        className="auth-switch mono"
+        onClick={() => {
+          setAuthMode(authMode === 'login' ? 'signup' : 'login')
+          setAuthMessage('')
+        }}
+      >
+        {authMode === 'login'
+          ? 'NEW USER? // CREATE ACCOUNT'
+          : 'ALREADY REGISTERED? // LOGIN'}
+      </button>
+    </div>
+  </div>
+)}
 
       <div className="nav-mobile" id="mobile-menu" aria-hidden={!open}>
         <div className="nav-mobile-head mono">

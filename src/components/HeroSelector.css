@@ -479,3 +479,36 @@
     right: -20vw;
   }
 }
+.hs-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.hs-favorite {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid rgba(245, 245, 245, 0.25);
+  background: rgba(0, 0, 0, 0.25);
+  color: rgba(245, 245, 245, 0.65);
+  cursor: pointer;
+  transition:
+    color 0.25s,
+    border-color 0.25s,
+    background-color 0.25s,
+    transform 0.25s;
+}
+
+.hs-favorite:hover {
+  color: var(--white);
+  border-color: var(--white);
+  transform: scale(1.08);
+}
+
+.hs-favorite.is-favorite {
+  color: var(--accent);
+  border-color: var(--accent);
+}
